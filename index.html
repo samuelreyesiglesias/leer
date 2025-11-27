@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfabeto Aventura: Juego Multimodal</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            /* Cambio a un fondo más suave y pastel */
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* Azul muy claro pastel */
+        }
+        .game-card {
+            box-shadow: 0 15px 40px rgba(79, 70, 229, 0.15); /* Sombra enfocada en el color principal */
+            border: 1px solid #eef2ff;
+            transition: all 0.3s;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(79, 70, 229, 0.2);
+        }
+        /* Estilo para el título principal */
+        .main-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            color: #4f46e5; /* Índigo */
+            text-shadow: 2px 2px 0 #c7d2fe;
+        }
+        .display-text {
+            font-size: 8rem;
+            line-height: 1;
+            text-shadow: 6px 6px 0 #8b5cf6;
+        }
+        /* Estilos de Botones de Menú mejorados */
+        .menu-btn {
+            @apply w-full py-4 px-6 font-extrabold text-xl rounded-2xl shadow-xl transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 mb-4;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Definición de colores para botones */
+        .btn-purple { @apply bg-purple-500 hover:bg-purple-600 focus:ring-purple-300; }
+        .btn-green { @apply bg-green-500 hover:bg-green-600 focus:ring-green-300; }
+        .btn-orange { @apply bg-orange-500 hover:bg-orange-600 focus:ring-orange-300; }
+        .btn-yellow { @apply bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-300; }
+        .btn-pink { @apply bg-pink-500 hover:bg-pink-600 focus:ring-pink-300; }
+        .btn-teal { @apply bg-teal-500 hover:bg-teal-600 focus:ring-teal-300; }
+        .btn-red { @apply bg-red-500 hover:bg-red-600 focus:ring-red-300; }
+        .btn-blue { @apply bg-blue-500 hover:bg-blue-600 focus:ring-blue-300; }
+        
+        /* Estilo específico para las teclas del panel de sonido (Soundboard) */
+        .soundboard-key {
+            @apply text-xl font-black bg-white p-4 rounded-xl shadow-lg border-b-4 border-indigo-200 hover:bg-indigo-100 active:bg-indigo-200 active:border-b-2 active:translate-y-0.5 transition-all duration-100 ease-in-out;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .soundboard-key-display {
+            @apply text-5xl font-extrabold text-indigo-700;
+        }
+        .soundboard-key-emoji {
+            @apply text-3xl mt-1;
+        }
+
+        /* Retroalimentación y Animaciones */
+        .correct-feedback { background-color: #34d399; animation: pulse-green 0.5s; }
+        .wrong-feedback { background-color: #f87171; animation: shake 0.5s; }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Otros estilos */
+        .letter-display { @apply text-7xl font-extrabold text-blue-600 mx-1 transition-all duration-300 ease-out; }
+        .sentence-highlight { @apply text-4xl font-extrabold text-blue-700 bg-blue-200 px-2 py-1 rounded-lg; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Contenedor Principal del Juego -->
+    <div id="game-container" class="w-full max-w-lg bg-white rounded-3xl p-6 md:p-10 game-card">
+
+        <!-- Título Fijo -->
+        <header class="text-center mb-6">
+            <h1 class="main-title font-black">🚀 Alfabeto Aventura</h1>
+            <p class="text-gray-500 mt-1" id="subtitle-text">Menú Principal</p>
+            <!-- Puntuación visible solo en modo Quiz -->
+            <div id="score-display" class="mt-4 text-xl font-bold text-gray-700 hidden">
+                Puntuación: <span id="score">0</span>
+            </div>
+        </header>
+
+        <!-- Mensaje Global (Reemplazo de alert) -->
+        <div id="global-message" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 hidden" role="alert">
+            <p id="global-message-text"></p>
+        </div>
+
+
+        <!-- 1. VISTA DE MENÚ PRINCIPAL -->
+        <section id="menu-view">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Selecciona un Modo de Juego</h2>
+
+            <div class="space-y-4">
+                
+                <!-- Nivel 1: Conciencia del Grafema (Letra) -->
+                <p class="text-lg font-semibold text-indigo-600 border-b pb-1">Nivel 1: Conciencia del Grafema (Letra)</p>
+                <button class="menu-btn btn-purple" onclick="startGame('flashcard', 'alphabet')">
+                    🃏 Alfabeto (Flashcards) - Introducción
+                </button>
+                <button class="menu-btn btn-green" onclick="startGame('quiz', 'alphabet')">
+                    🅰️ Alfabeto (Cuestionario) - Práctica
+                </button>
+
+                <!-- Nivel 1.5: Exploración Auditiva -->
+                <p class="text-lg font-semibold text-indigo-600 border-b pb-1 pt-4">Nivel 1.5: Exploración Auditiva (Panel Táctil)</p>
+                <button class="menu-btn btn-orange" onclick="startSoundboardGame('alphabet')">
+                    🎹 Alfabeto (Panel de Sonido)
+                </button>
+                <button class="menu-btn btn-yellow" onclick="startSoundboardGame('syllables')">
+                    🎼 Sílabas (Panel de Sonido)
+                </button>
+
+
+                <!-- Nivel 2: Conciencia Silábica -->
+                <p class="text-lg font-semibold text-indigo-600 border-b pb-1 pt-4">Nivel 2: Conciencia Silábica</p>
+                <button class="menu-btn btn-pink" onclick="startGame('flashcard', 'syllables')">
+                    🔗 Sílabas (Flashcards) - Introducción
+                </button>
+                <button class="menu-btn btn-teal" onclick="startGame('quiz', 'syllables')">
+                    📚 Sílabas (Cuestionario) - Práctica
+                </button>
+
+                <!-- Nivel 3: Unión y Síntesis Fonológica -->
+                <p class="text-lg font-semibold text-indigo-600 border-b pb-1 pt-4">Nivel 3: Unión y Síntesis Fonológica</p>
+                <button class="menu-btn btn-red" onclick="startGame('blending', 'blending-words')">
+                    🧩 Construcción de Palabras (Blending)
+                </button>
+                
+                <!-- Nivel 4: Lectura Fluida en Contexto -->
+                <p class="text-lg font-semibold text-indigo-600 border-b pb-1 pt-4">Nivel 4: Ruta de Aprendizaje Completa</p>
+                <button class="menu-btn btn-blue" onclick="startGame('path', 'blending-words')">
+                    🗺️ Ruta de Aprendizaje (5 Pasos Guiados)
+                </button>
+            </div>
+            
+            <!-- Opción de Créditos añadida al final del menú -->
+            <div class="mt-8 pt-4 border-t border-gray-200">
+                 <button class="w-full py-3 px-6 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition" onclick="changeView('credits')">
+                    ℹ️ Acerca de (Créditos)
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. VISTA DE CUESTIONARIO (Quiz) -->
+        <section id="quiz-view" class="hidden">
+            <button class="mb-4 text-indigo-600 font-semibold flex items-center hover:text-indigo-800" onclick="changeView('menu')">
+                <span class="mr-2">←</span> Volver al Menú
+            </button>
+            
+            <section class="text-center mb-8 bg-indigo-100 p-4 rounded-xl shadow-inner">
+                <p class="text-lg font-bold text-indigo-800 mb-2" id="quiz-instruction">Encuentra una palabra que empiece con:</p>
+                <div class="flex items-center justify-center">
+                    <!-- Nota: El onclick se actualizará en loadNewQuestion -->
+                    <span id="quiz-display-item" class="display-text font-extrabold text-indigo-600 cursor-pointer hover:scale-105 transform transition" onclick="speakText(currentQuestion.correct.display)">A</span>
+                </div>
+                <p id="quiz-feedback-message" class="mt-3 text-xl font-bold h-6"></p>
+            </section>
+
+            <!-- Opciones de Imágenes (Botones) -->
+            <main id="quiz-choices-container" class="grid grid-cols-2 gap-4">
+                <!-- Los botones se generarán aquí por JavaScript -->
+            </main>
+
+            <!-- Botón para Reiniciar/Siguiente -->
+            <div class="mt-8 text-center">
+                <button id="quiz-next-button" onclick="loadNewQuestion()" class="w-full py-3 px-6 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition transform hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-purple-300">
+                    Siguiente
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. VISTA DE FLASHCARD (Identificación sin selección) -->
+        <section id="flashcard-view" class="hidden">
+            <button class="mb-4 text-indigo-600 font-semibold flex items-center hover:text-indigo-800" onclick="changeView('menu')">
+                <span class="mr-2">←</span> Volver al Menú
+            </button>
+            
+            <section class="text-center mb-8 bg-purple-100 p-6 rounded-xl shadow-lg">
+                <p class="text-xl font-bold text-purple-800 mb-4" id="flashcard-instruction">Identifica la siguiente:</p>
+                <div class="flex items-center justify-center mb-6">
+                    <!-- Elemento a identificar (Letra o Sílaba) -->
+                    <span id="flashcard-display-item" class="display-text font-extrabold text-purple-600 cursor-pointer hover:scale-105 transform transition" onclick="speakText(currentFlashcard.display)">A</span>
+                </div>
+
+                <!-- Tarjeta de Respuesta (Oculta al inicio) -->
+                <div id="flashcard-answer-card" class="bg-white p-4 rounded-xl border-4 border-purple-300 shadow-inner hidden">
+                    <p class="text-lg text-gray-500 font-medium">Empieza con:</p>
+                    <div class="flex items-center justify-center mt-2">
+                         <span id="flashcard-emoji" class="text-4xl mr-3"></span>
+                         <span id="flashcard-word" class="text-2xl font-bold text-purple-700"></span>
+                    </div>
+                </div>
+
+                <p id="flashcard-hint" class="mt-4 text-sm text-gray-500">Haz clic en "Ver Respuesta" o en la letra para escucharla.</p>
+            </section>
+
+            <!-- Botones de Flashcard -->
+            <div class="mt-8 text-center space-y-3">
+                 <button id="show-answer-button" onclick="showFlashcardAnswer()" class="w-full py-3 px-6 bg-yellow-500 text-white font-bold rounded-xl shadow-lg hover:bg-yellow-600 transition transform hover:scale-[1.01]">
+                    Ver Respuesta
+                </button>
+                <button id="next-flashcard-button" onclick="loadNewFlashcard()" class="w-full py-3 px-6 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition transform hover:scale-[1.01] hidden">
+                    Siguiente Tarjeta
+                </button>
+            </div>
+        </section>
+        
+        <!-- 4. VISTA DE UNIÓN DE SÍLABAS (Blending) -->
+        <section id="blending-view" class="hidden">
+            <button class="mb-4 text-indigo-600 font-semibold flex items-center hover:text-indigo-800" onclick="changeView('menu')">
+                <span class="mr-2">←</span> Volver al Menú
+            </button>
+
+            <section class="text-center mb-8 bg-red-100 p-6 rounded-xl shadow-lg">
+                <p class="text-xl font-bold text-red-800 mb-4" id="blending-instruction">Presiona para construir la palabra:</p>
+
+                <!-- Contenedor para la construcción de sílabas (Piezas) -->
+                <div id="blending-syllables-container" class="flex justify-center items-center h-20 mb-6 space-x-2">
+                    <!-- Piezas de sílabas aparecerán aquí -->
+                </div>
+
+                <!-- Tarjeta de Respuesta (Oculta al inicio) -->
+                <div id="blending-answer-card" class="bg-white p-4 rounded-xl border-4 border-red-300 shadow-inner hidden">
+                    <p class="text-lg text-gray-500 font-medium">Palabra Completa:</p>
+                    <div class="flex items-center justify-center mt-2">
+                         <span id="blending-emoji" class="text-4xl mr-3"></span>
+                         <span id="blending-word" class="text-2xl font-bold text-red-700"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Botones de Blending -->
+            <div class="mt-8 text-center space-y-3">
+                 <button id="blending-action-button" onclick="handleBlendingAction()" class="w-full py-3 px-6 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition transform hover:scale-[1.01]">
+                    Comenzar
+                </button>
+                <button id="blending-next-button" onclick="loadNewBlendingWord()" class="w-full py-3 px-6 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition transform hover:scale-[1.01] hidden">
+                    Siguiente Palabra
+                </button>
+            </div>
+        </section>
+        
+        <!-- 5. VISTA DE RUTA DE APRENDIZAJE (Learning Path) -->
+        <section id="path-view" class="hidden">
+            <button class="mb-4 text-indigo-600 font-semibold flex items-center hover:text-indigo-800" onclick="changeView('menu')">
+                <span class="mr-2">←</span> Volver al Menú
+            </button>
+
+            <section class="text-center mb-8 bg-blue-100 p-6 rounded-xl shadow-lg min-h-[16rem] flex flex-col justify-center">
+                <p class="text-xl font-bold text-blue-800 mb-4" id="path-instruction">Paso 1: Identificación</p>
+
+                <!-- Contenedor principal de la tarjeta -->
+                <div id="path-card-container" class="flex flex-col justify-center items-center bg-white p-6 rounded-xl border-4 border-blue-400 shadow-xl transition-all duration-500">
+                    <!-- Contenido dinámico (Letra, Palabra, Silabas) -->
+                    <div id="path-display-primary" class="flex justify-center items-center min-h-[5rem]">
+                        <!-- Se usa un contenedor para las letras/sílabas -->
+                    </div>
+                    <div id="path-display-secondary-container" class="flex items-center mt-4 h-10">
+                        <!-- Emoji y Palabra (Paso 3) -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Botones de Control -->
+            <div class="mt-8 text-center space-y-3">
+                 <button id="path-action-button" onclick="handleLearningPathAction()" class="w-full py-3 px-6 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition transform hover:scale-[1.01]">
+                    Comenzar Ruta
+                </button>
+                <button id="path-next-button" onclick="loadNewLearningPathWord()" class="w-full py-3 px-6 bg-purple-600 text-white font-bold rounded-xl shadow-lg hover:bg-purple-700 transition transform hover:scale-[1.01] hidden">
+                    Siguiente Palabra
+                </button>
+            </div>
+        </section>
+
+        <!-- 6. VISTA DE PANEL DE SONIDO (SOUNDBOARD) -->
+        <section id="soundboard-view" class="hidden">
+            <button class="mb-4 text-indigo-600 font-semibold flex items-center hover:text-indigo-800" onclick="changeView('menu')">
+                <span class="mr-2">←</span> Volver al Menú
+            </button>
+
+            <section class="text-center mb-8 bg-gray-100 p-6 rounded-xl shadow-lg">
+                <p class="text-xl font-bold text-gray-800 mb-4" id="soundboard-instruction">Panel de Sonido: Toca para escuchar</p>
+
+                <!-- Contenedor de Teclas (Grid) -->
+                <div id="soundboard-keys-container" class="grid gap-2">
+                    <!-- Las teclas se generarán aquí por JavaScript -->
+                </div>
+            </section>
+        </section>
+        
+        <!-- 7. VISTA DE CRÉDITOS -->
+        <section id="credits-view" class="hidden">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">ℹ️ Acerca de (Créditos)</h2>
+            
+            <div class="space-y-6 p-6 bg-indigo-50 rounded-xl border border-indigo-200">
+                <p class="text-gray-700 italic">
+                    Este proyecto fue desarrollado en el marco de la Licenciatura en Informática Educativa y el Curso de Desarrollo de la Creatividad de la Universidad de El Salvador (UES).
+                </p>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-indigo-700 mb-2">Desarrolladores del Proyecto</h3>
+                    <ul class="list-disc list-inside ml-4 text-gray-600 space-y-1">
+                        <li>Samuel Alexander Reyes Iglesias</li>
+                        <li>Verónica Yamileth Ramírez</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-indigo-700 mb-2">Institución y Contexto</h3>
+                    <p class="text-gray-600">
+                        <span class="font-semibold">Institución:</span> Universidad de El Salvador (UES)<br>
+                        <span class="font-semibold">Carrera:</span> Licenciatura en Informática Educativa<br>
+                        <span class="font-semibold">Curso:</span> Desarrollo de la Creatividad
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-indigo-700 mb-2">Tutoría</h3>
+                    <p class="text-gray-600 font-medium">Lic. Sara Marcela Vásquez Núñez</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center">
+                 <button class="w-full py-3 px-6 bg-indigo-500 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-600 transition transform hover:scale-[1.01]" onclick="changeView('menu')">
+                    ← Volver al Menú
+                </button>
+            </div>
+        </section>
+        
+    </div>
+
+    <!-- Script de JavaScript para la Lógica del Juego -->
+    <script>
+        // --- DATOS DEL JUEGO ---
+        // Se añade 'emoji' y 'word' a alphabetData para que el soundboard tenga contexto visual
+        const alphabetData = [
+            { display: 'A', word: 'Avión', emoji: '✈️' },
+            { display: 'B', word: 'Barco', emoji: '🚢' },
+            { display: 'C', word: 'Casa', emoji: '🏠' },
+            { display: 'D', word: 'Delfín', emoji: '🐬' },
+            { display: 'E', word: 'Elefante', emoji: '🐘' },
+            { display: 'F', word: 'Fresa', emoji: '🍓' },
+            { display: 'G', word: 'Gato', emoji: '🐈' },
+            { display: 'H', word: 'Helado', emoji: '🍦' }, 
+            { display: 'I', word: 'Isla', emoji: '🏝️' },
+            { display: 'J', word: 'Jirafa', emoji: '🦒' },
+            { display: 'K', word: 'Koala', emoji: '🐨' },
+            { display: 'L', word: 'León', emoji: '🦁' },
+            { display: 'M', word: 'Mono', emoji: '🐒' },
+            { display: 'N', word: 'Nube', emoji: '☁️' },
+            { display: 'Ñ', word: 'Ñandú', emoji: '🪶' },
+            { display: 'O', word: 'Oso', emoji: '🐻' },
+            { display: 'P', word: 'Perro', emoji: '🐕' },
+            { display: 'Q', word: 'Queso', emoji: '🧀' },
+            { display: 'R', word: 'Rana', emoji: '🐸' },
+            { display: 'S', word: 'Sol', emoji: '☀️' },
+            { display: 'T', word: 'Tigre', emoji: '🐅' },
+            { display: 'U', word: 'Uva', emoji: '🍇' },
+            { display: 'V', word: 'Vaca', emoji: '🐄' },
+            { display: 'W', word: 'Web', emoji: '🌐' },
+            { display: 'X', word: 'Xilófono', emoji: '🎹' },
+            { display: 'Y', word: 'Yate', emoji: '🛥️' },
+            { display: 'Z', word: 'Zanahoria', emoji: '🥕' },
+        ];
+
+        // Datos para Sílabas (Consonante-Vocal)
+        const syllableData = [
+            // M
+            { display: 'MA', word: 'Mano', emoji: '🖐️' }, { display: 'ME', word: 'Mesa', emoji: '🪑' }, { display: 'MI', word: 'Miel', emoji: '🍯' }, { display: 'MO', word: 'Moto', emoji: '🏍️' }, { display: 'MU', word: 'Mundo', emoji: '🌎' },
+            // P
+            { display: 'PA', word: 'Pato', emoji: '🦆' }, { display: 'PE', word: 'Pera', emoji: '🍐' }, { display: 'PI', word: 'Pino', emoji: '🌲' }, { display: 'PO', word: 'Polo', emoji: '👕' }, { display: 'PU', word: 'Puerta', emoji: '🚪' },
+            // S
+            { display: 'SA', word: 'Sapo', emoji: '🐸' }, { display: 'SE', word: 'Sello', emoji: '✉️' }, { display: 'SI', word: 'Silla', emoji: '🪑' }, { display: 'SO', word: 'Sopa', emoji: '🍲' }, { display: 'SU', word: 'Suelo', emoji: '⬇️' },
+            // L
+            { display: 'LA', word: 'Lana', emoji: '🐑' }, { display: 'LE', word: 'Leche', emoji: '🥛' }, { display: 'LI', word: 'Libro', emoji: '📚' }, { display: 'LO', word: 'Loro', emoji: '🦜' }, { display: 'LU', word: 'Luna', emoji: '🌕' },
+            // T
+            { display: 'TA', word: 'Taza', emoji: '☕' }, { display: 'TE', word: 'Teléfono', emoji: '📞' }, { display: 'TI', word: 'Tijeras', emoji: '✂️' }, { display: 'TO', word: 'Toro', emoji: '🐂' }, { display: 'TU', word: 'Tubo', emoji: '🧴' },
+            // R (fuerte)
+            { display: 'RA', word: 'Rama', emoji: '🌳' }, { display: 'RE', word: 'Roca', emoji: '🪨' }, { display: 'RI', word: 'Río', emoji: '🌊' }, { display: 'RO', word: 'Rosa', emoji: '🌹' }, { display: 'RU', word: 'Rueda', emoji: '🎡' },
+            // D
+            { display: 'DA', word: 'Dado', emoji: '🎲' }, { display: 'DE', word: 'Dedo', emoji: '👆' }, { display: 'DI', word: 'Diente', emoji: '🦷' }, { display: 'DO', word: 'Dólar', emoji: '💵' }, { display: 'DU', word: 'Ducha', emoji: '🚿' },
+            // N
+            { display: 'NA', word: 'Naranja', emoji: '🍊' }, { display: 'NE', word: 'Nene', emoji: '👶' }, { display: 'NI', word: 'Nido', emoji: '🥚' }, { display: 'NO', word: 'Noche', emoji: '🌙' }, { display: 'NU', word: 'Nuez', emoji: '🌰' },
+        ];
+        
+        // Datos para Unión de Sílabas (Blending) - Usadas también para la Ruta de Aprendizaje
+        const initialBlendingData = [
+            { word: 'MANO', emoji: '🖐️', syllables: ['MA', 'NO'], sentence: 'La mano de mi papá.' },
+            { word: 'MESA', emoji: '🪑', syllables: ['ME', 'SA'], sentence: 'La mesa es grande.' },
+            { word: 'PATO', emoji: '🦆', syllables: ['PA', 'TO'], sentence: 'El pato nada en el río.' },
+            { word: 'LUPA', emoji: '🔍', syllables: ['LU', 'PA'], sentence: 'Uso la lupa para ver mejor.' },
+            { word: 'MULA', emoji: '🐴', syllables: ['MU', 'LA'], sentence: 'La mula lleva carga.' },
+            { word: 'DEDO', emoji: '👆', syllables: ['DE', 'DO'], sentence: 'Me duele el dedo gordo.' },
+            { word: 'NIDO', emoji: '🥚', syllables: ['NI', 'DO'], sentence: 'Hay un nido en el árbol.' },
+            { word: 'OSO', emoji: '🐻', syllables: ['O', 'SO'], sentence: 'El oso come miel.' },
+            { word: 'SOPA', emoji: '🍲', syllables: ['SO', 'PA'], sentence: 'Mi mamá hizo sopa rica.' },
+            { word: 'RATA', emoji: '🐀', syllables: ['RA', 'TA'], sentence: 'Vi una rata pequeña.' },
+        ];
+
+
+        // --- ESTADO GLOBAL Y REFERENCIAS ---
+        let score = 0;
+        let currentQuestion = null;      
+        let currentFlashcard = null;     
+        let currentBlendingWord = null;  
+        let blendingStep = 0;            
+        let currentLearningPathWord = null; 
+        let pathStep = 0;                
+
+        let questionActive = true;
+        let currentView = 'menu';
+        let currentDataType = 'alphabet'; 
+        let gameData = [...alphabetData]; 
+
+        // Referencias del DOM
+        const subtitleText = document.getElementById('subtitle-text');
+        const scoreDisplay = document.getElementById('score-display');
+        const scoreElement = document.getElementById('score');
+        const globalMessage = document.getElementById('global-message');
+        const globalMessageText = document.getElementById('global-message-text');
+
+        // Vistas
+        const menuView = document.getElementById('menu-view');
+        const quizView = document.getElementById('quiz-view');
+        const flashcardView = document.getElementById('flashcard-view');
+        const blendingView = document.getElementById('blending-view');
+        const pathView = document.getElementById('path-view');
+        const soundboardView = document.getElementById('soundboard-view'); 
+        const creditsView = document.getElementById('credits-view'); // NUEVA REFERENCIA
+
+        // Referencias de Quiz
+        const quizDisplayItem = document.getElementById('quiz-display-item');
+        const quizInstruction = document.getElementById('quiz-instruction');
+        const quizChoicesContainer = document.getElementById('quiz-choices-container');
+        const quizFeedbackMessage = document.getElementById('quiz-feedback-message');
+        const quizNextButton = document.getElementById('quiz-next-button');
+
+        // Referencias de Flashcard
+        const flashcardDisplayItem = document.getElementById('flashcard-display-item');
+        const flashcardInstruction = document.getElementById('flashcard-instruction');
+        const flashcardAnswerCard = document.getElementById('flashcard-answer-card');
+        const flashcardEmoji = document.getElementById('flashcard-emoji');
+        const flashcardWord = document.getElementById('flashcard-word');
+        const showAnswerButton = document.getElementById('show-answer-button');
+        const nextFlashcardButton = document.getElementById('next-flashcard-button');
+        
+        // Referencias de Blending
+        const blendingInstruction = document.getElementById('blending-instruction');
+        const blendingSyllablesContainer = document.getElementById('blending-syllables-container');
+        const blendingAnswerCard = document.getElementById('blending-answer-card');
+        const blendingEmoji = document.getElementById('blending-emoji');
+        const blendingWord = document.getElementById('blending-word');
+        const blendingActionButton = document.getElementById('blending-action-button');
+        const blendingNextButton = document.getElementById('blending-next-button');
+
+        // Referencias de Learning Path (Ruta de Aprendizaje)
+        const pathInstruction = document.getElementById('path-instruction');
+        const pathCardContainer = document.getElementById('path-card-container');
+        const pathDisplayPrimary = document.getElementById('path-display-primary');
+        const pathDisplaySecondaryContainer = document.getElementById('path-display-secondary-container');
+        const pathActionButton = document.getElementById('path-action-button');
+        const pathNextButton = document.getElementById('path-next-button');
+        
+        // Referencias de Soundboard (Panel de Sonido)
+        const soundboardInstruction = document.getElementById('soundboard-instruction');
+        const soundboardKeysContainer = document.getElementById('soundboard-keys-container');
+
+
+        // --- FUNCIONES DE UTILIDAD ---
+
+        /**
+         * Muestra un mensaje global temporal (reemplazo de alert).
+         * @param {string} text El texto a mostrar.
+         */
+        function showGlobalMessage(text) {
+            globalMessageText.textContent = text;
+            globalMessage.classList.remove('hidden');
+            setTimeout(() => {
+                globalMessage.classList.add('hidden');
+            }, 3000);
+        }
+
+        /**
+         * Función auxiliar para reproducir texto por voz.
+         * @param {string} text El texto a decir.
+         * @param {number} delay Tiempo de espera antes de hablar (en ms).
+         */
+        function speakText(text, delay = 0) {
+            if (!('speechSynthesis' in window)) {
+                console.warn('SpeechSynthesis no está soportado en este navegador.');
+                return;
+            }
+            // Cancelar cualquier discurso en curso
+            window.speechSynthesis.cancel(); 
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-ES'; // Configurar idioma español
+            if (delay > 0) {
+                setTimeout(() => window.speechSynthesis.speak(utterance), delay);
+            } else {
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        /**
+         * Función auxiliar para obtener las letras de una palabra.
+         * @param {string} word La palabra a dividir.
+         * @returns {Array<string>} Array de letras en mayúsculas.
+         */
+        const getLetters = (word) => word.toUpperCase().split('');
+
+        /**
+         * Mezcla un array (Algoritmo de Fisher-Yates).
+         * @param {Array} array El array a mezclar.
+         * @returns {Array} El array mezclado.
+         */
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- CONTROL DE VISTAS ---
+
+        /**
+         * Cambia la vista actual del juego.
+         * @param {string} viewName 'menu', 'quiz', 'flashcard', 'blending', 'path', 'soundboard', o 'credits'.
+         */
+        function changeView(viewName) {
+            // Ocultar todas las vistas
+            menuView.classList.add('hidden');
+            quizView.classList.add('hidden');
+            flashcardView.classList.add('hidden');
+            blendingView.classList.add('hidden');
+            pathView.classList.add('hidden');
+            soundboardView.classList.add('hidden'); 
+            creditsView.classList.add('hidden'); // Ocultar nueva vista
+            scoreDisplay.classList.add('hidden'); 
+
+            currentView = viewName;
+            subtitleText.textContent = ''; 
+
+            // Mostrar la vista correcta
+            switch (viewName) {
+                case 'menu':
+                    menuView.classList.remove('hidden');
+                    subtitleText.textContent = 'Menú Principal';
+                    break;
+                case 'quiz':
+                    quizView.classList.remove('hidden');
+                    scoreDisplay.classList.remove('hidden');
+                    break;
+                case 'flashcard':
+                    flashcardView.classList.remove('hidden');
+                    break;
+                case 'blending':
+                    blendingView.classList.remove('hidden');
+                    break;
+                case 'path':
+                    pathView.classList.remove('hidden');
+                    break;
+                case 'soundboard':
+                    soundboardView.classList.remove('hidden'); 
+                    break;
+                case 'credits':
+                    creditsView.classList.remove('hidden'); // Mostrar nueva vista
+                    subtitleText.textContent = 'Acerca de (Créditos)';
+                    break;
+            }
+        }
+
+        /**
+         * Inicializa y comienza un nuevo juego (para Quiz, Flashcard, Blending, Path).
+         * @param {string} mode 'quiz', 'flashcard', 'blending', o 'path'.
+         * @param {string} type 'alphabet', 'syllables', o 'blending-words'.
+         */
+        function startGame(mode, type) {
+            currentDataType = type;
+            score = 0;
+            scoreElement.textContent = 0;
+            
+            let dataArray;
+            let typeLabel;
+            
+            if (type === 'alphabet') {
+                dataArray = alphabetData;
+                typeLabel = 'Alfabeto';
+            } else if (type === 'syllables') {
+                dataArray = syllableData;
+                typeLabel = 'Sílabas';
+            } else if (type === 'blending-words') {
+                dataArray = initialBlendingData;
+                typeLabel = 'Unión de Sílabas';
+            }
+            
+            gameData = [...dataArray];
+
+            if (mode === 'quiz') {
+                subtitleText.textContent = `Cuestionario: ${typeLabel}`;
+                changeView('quiz');
+                loadNewQuestion();
+            } else if (mode === 'flashcard') {
+                subtitleText.textContent = `Flashcards: ${typeLabel}`;
+                changeView('flashcard');
+                loadNewFlashcard();
+            } else if (mode === 'blending') {
+                subtitleText.textContent = `Construcción: ${typeLabel}`;
+                changeView('blending');
+                loadNewBlendingWord();
+            } else if (mode === 'path') { 
+                subtitleText.textContent = `Ruta Guiada: ${typeLabel}`;
+                changeView('path');
+                loadNewLearningPathWord();
+            }
+        }
+
+        // --- LÓGICA DEL PANEL DE SONIDO (SOUNDBOARD) ---
+
+        /**
+         * Inicializa y comienza el modo Panel de Sonido.
+         * @param {string} type 'alphabet' o 'syllables'.
+         */
+        function startSoundboardGame(type) {
+            changeView('soundboard');
+            currentDataType = type;
+            soundboardKeysContainer.innerHTML = '';
+            
+            let dataArray;
+            let gridCols;
+            
+            if (type === 'alphabet') {
+                dataArray = alphabetData;
+                gridCols = 'grid-cols-5'; 
+                subtitleText.textContent = 'Exploración Auditiva: Alfabeto';
+            } else if (type === 'syllables') {
+                dataArray = syllableData;
+                gridCols = 'grid-cols-4'; 
+                subtitleText.textContent = 'Exploración Auditiva: Sílabas';
+            }
+            
+            // Aplicar el layout de cuadrícula
+            soundboardKeysContainer.className = `grid gap-2 ${gridCols}`;
+            soundboardInstruction.textContent = `Panel de Sonido: Toca para escuchar ${type === 'alphabet' ? 'cada letra' : 'cada sílaba'}`;
+
+            // Generar los botones con Emojis
+            dataArray.forEach(item => {
+                const button = document.createElement('button');
+                button.classList.add('soundboard-key');
+                button.innerHTML = `
+                    <span class="soundboard-key-display">${item.display}</span>
+                    <span class="soundboard-key-emoji">${item.emoji}</span>
+                `;
+                button.onclick = () => {
+                    // Agregar un pequeño efecto visual al tocar
+                    button.classList.add('bg-indigo-200');
+                    speakText(item.display);
+                    setTimeout(() => {
+                        button.classList.remove('bg-indigo-200');
+                    }, 200);
+                };
+                soundboardKeysContainer.appendChild(button);
+            });
+        }
+
+
+        // --- LÓGICA DEL MODO CUESTIONARIO (QUIZ) ---
+        function generateQuestion() {
+            if (gameData.length === 0) {
+                gameData = (currentDataType === 'alphabet' ? [...alphabetData] : [...syllableData]);
+                showGlobalMessage(`¡Felicidades! Has completado todos los elementos. Reiniciando el modo.`);
+            }
+            const correctIndex = Math.floor(Math.random() * gameData.length);
+            const correctItem = gameData[correctIndex];
+            gameData.splice(correctIndex, 1);
+
+            const sourceData = currentDataType === 'alphabet' ? alphabetData : syllableData;
+            let incorrectOptions = sourceData.filter(item => item.display !== correctItem.display);
+            shuffle(incorrectOptions);
+            const wrongChoices = incorrectOptions.slice(0, 3);
+            let choices = [...wrongChoices, correctItem];
+            shuffle(choices);
+
+            return { correct: correctItem, choices: choices };
+        }
+
+        function loadNewQuestion() {
+            questionActive = true;
+            quizFeedbackMessage.textContent = '';
+            quizNextButton.classList.add('hidden');
+
+            currentQuestion = generateQuestion();
+            const { correct, choices } = currentQuestion;
+
+            quizDisplayItem.textContent = correct.display;
+            quizDisplayItem.onclick = () => speakText(correct.display);
+            speakText(correct.display);
+
+            quizInstruction.textContent = currentDataType === 'alphabet' 
+                ? 'Encuentra una palabra que empiece con:' 
+                : 'Encuentra una palabra que contenga la sílaba:';
+
+            quizChoicesContainer.innerHTML = '';
+            choices.forEach(item => {
+                const button = document.createElement('button');
+                button.setAttribute('data-display', item.display);
+                button.classList.add(
+                    'choice-button', 'bg-white', 'p-4', 'md:p-6', 'rounded-2xl', 'shadow-md',
+                    'flex', 'flex-col', 'items-center', 'justify-center', 'text-gray-800',
+                    'text-center', 'border-4', 'border-indigo-200', 'hover:border-indigo-400'
+                );
+                button.innerHTML = `
+                    <span class="text-6xl md:text-7xl mb-2">${item.emoji}</span>
+                    <span class="text-lg font-semibold">${item.word}</span>
+                `;
+                button.onclick = () => checkAnswer(item.display);
+                quizChoicesContainer.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selectedDisplay) {
+            if (!questionActive) return;
+
+            questionActive = false;
+            quizNextButton.classList.remove('hidden');
+
+            const correctDisplay = currentQuestion.correct.display;
+            const correctWord = currentQuestion.correct.word;
+            const buttons = quizChoicesContainer.querySelectorAll('button');
+            const instructionPrefix = currentDataType === 'alphabet' ? 'La palabra es' : 'La sílaba está en';
+
+            buttons.forEach(button => {
+                buttonDisplay = button.getAttribute('data-display');
+                button.onclick = null;
+
+                if (buttonDisplay === correctDisplay) {
+                    button.classList.add('correct-feedback', 'border-green-600');
+                    button.classList.remove('border-indigo-200', 'hover:border-indigo-400', 'opacity-50');
+                } else {
+                    button.classList.add('opacity-50');
+                }
+
+                if (buttonDisplay === selectedDisplay) {
+                    if (selectedDisplay === correctDisplay) {
+                        score++;
+                        scoreElement.textContent = score;
+                        quizFeedbackMessage.classList.remove('text-red-600');
+                        quizFeedbackMessage.classList.add('text-green-600');
+                        quizFeedbackMessage.textContent = `¡Correcto! ${instructionPrefix} ${correctWord}.`;
+                        speakText(`¡Correcto! ${correctWord}`, 300);
+                    } else {
+                        quizFeedbackMessage.classList.remove('text-green-600');
+                        quizFeedbackMessage.classList.add('text-red-600');
+                        quizFeedbackMessage.textContent = `¡Incorrecto! ${instructionPrefix} ${correctWord}.`;
+                        button.classList.add('wrong-feedback', 'border-red-600');
+                        speakText(`No, la correcta es ${correctWord}`, 300);
+                    }
+                }
+            });
+        }
+
+        // --- LÓGICA DEL MODO FLASHCARD ---
+        function loadNewFlashcard() {
+            if (gameData.length === 0) {
+                gameData = (currentDataType === 'alphabet' ? [...alphabetData] : [...syllableData]);
+                showGlobalMessage(`¡Felicidades! Has completado el modo Flashcard. Reiniciando.`);
+            }
+            const itemIndex = Math.floor(Math.random() * gameData.length);
+            currentFlashcard = gameData[itemIndex];
+            gameData.splice(itemIndex, 1);
+
+            flashcardAnswerCard.classList.add('hidden');
+            showAnswerButton.classList.remove('hidden');
+            nextFlashcardButton.classList.add('hidden');
+            flashcardWord.textContent = '';
+            flashcardEmoji.textContent = '';
+            
+            flashcardDisplayItem.textContent = currentFlashcard.display;
+            flashcardDisplayItem.onclick = () => speakText(currentFlashcard.display);
+            
+            flashcardInstruction.textContent = currentDataType === 'alphabet' 
+                ? 'Identifica la letra y piensa una palabra:' 
+                : 'Identifica la sílaba y piensa una palabra:';
+            
+            speakText(currentFlashcard.display);
+        }
+
+        function showFlashcardAnswer() {
+            flashcardAnswerCard.classList.remove('hidden');
+            showAnswerButton.classList.add('hidden');
+            nextFlashcardButton.classList.remove('hidden');
+
+            flashcardWord.textContent = currentFlashcard.word;
+            flashcardEmoji.textContent = currentFlashcard.emoji;
+            
+            speakText(currentFlashcard.word, 300);
+        }
+        
+        // --- LÓGICA DEL MODO UNIÓN DE SÍLABAS (BLENDING) ---
+        function loadNewBlendingWord() {
+            if (gameData.length === 0) {
+                gameData = [...initialBlendingData];
+                showGlobalMessage(`¡Felicidades! Has completado el modo Construcción de Palabras. Reiniciando.`);
+            }
+            const itemIndex = Math.floor(Math.random() * gameData.length);
+            currentBlendingWord = gameData[itemIndex];
+            gameData.splice(itemIndex, 1);
+
+            blendingStep = 0;
+            blendingSyllablesContainer.innerHTML = '';
+            blendingAnswerCard.classList.add('hidden');
+            blendingNextButton.classList.add('hidden');
+            blendingActionButton.classList.remove('hidden');
+            blendingActionButton.textContent = 'Comenzar';
+            
+            blendingInstruction.textContent = 'Presiona "Comenzar" para escuchar y unir las sílabas.';
+        }
+
+        function handleBlendingAction() {
+            if (!currentBlendingWord) return;
+
+            blendingStep++;
+
+            if (blendingStep === 1) {
+                const syllable1 = currentBlendingWord.syllables[0];
+                blendingSyllablesContainer.innerHTML = `
+                    <div id="piece-1" class="syllable-piece active text-red-600">${syllable1}</div>
+                    <div id="piece-2" class="syllable-piece text-red-600">?</div>
+                `;
+                speakText(syllable1);
+                blendingActionButton.textContent = 'Siguiente Sílaba';
+                blendingInstruction.textContent = `Escucha: ${syllable1}`;
+
+            } else if (blendingStep === 2) {
+                const syllable2 = currentBlendingWord.syllables[1];
+                const piece2 = document.getElementById('piece-2');
+                piece2.textContent = syllable2;
+                piece2.classList.add('active');
+                speakText(syllable2);
+                blendingActionButton.textContent = '¡Unir y Revelar!';
+                blendingInstruction.textContent = `Escucha: ${syllable2}`;
+
+            } else if (blendingStep === 3) {
+                blendingSyllablesContainer.innerHTML = `
+                    <div class="text-7xl font-extrabold text-red-600 bg-white p-4 rounded-lg shadow-xl border-4 border-red-500 transform scale-110 transition-all duration-300">
+                        ${currentBlendingWord.syllables.join('')}
+                    </div>
+                `;
+                
+                blendingWord.textContent = currentBlendingWord.word;
+                blendingEmoji.textContent = currentBlendingWord.emoji;
+                blendingAnswerCard.classList.remove('hidden');
+                
+                speakText(currentBlendingWord.word, 500);
+                
+                blendingActionButton.classList.add('hidden');
+                blendingNextButton.classList.remove('hidden');
+                blendingInstruction.textContent = `¡Lo lograste! Presiona Siguiente.`;
+            }
+        }
+        
+        // --- LÓGICA DEL MODO RUTA DE APRENDIZAJE (PATH) ---
+        
+        // Variables para la animación secuencial de letras y sílabas
+        let pathAnimationInterval = null;
+
+        /**
+         * Limpia cualquier intervalo de animación activo.
+         */
+        function stopPathAnimation() {
+            if (pathAnimationInterval) {
+                clearInterval(pathAnimationInterval);
+                pathAnimationInterval = null;
+            }
+        }
+
+        /**
+         * Carga una nueva palabra para la Ruta de Aprendizaje.
+         */
+        function loadNewLearningPathWord() {
+            stopPathAnimation();
+            if (gameData.length === 0) {
+                gameData = [...initialBlendingData];
+                showGlobalMessage(`¡Felicidades! Has completado la Ruta de Aprendizaje. Reiniciando.`);
+            }
+
+            const itemIndex = Math.floor(Math.random() * gameData.length);
+            currentLearningPathWord = gameData[itemIndex];
+            gameData.splice(itemIndex, 1);
+
+            // Resetear estado visual y lógico
+            pathStep = 0;
+            pathDisplayPrimary.innerHTML = '';
+            pathDisplaySecondaryContainer.innerHTML = '';
+            pathActionButton.classList.remove('hidden');
+            pathNextButton.classList.add('hidden');
+            pathActionButton.textContent = 'Comenzar Ruta';
+            
+            pathInstruction.textContent = 'Presiona "Comenzar" para iniciar la ruta de aprendizaje de 5 pasos.';
+            pathCardContainer.classList.remove('border-green-500', 'border-red-500');
+            pathCardContainer.classList.add('border-blue-400');
+        }
+
+        /**
+         * Maneja la acción del botón de la Ruta de Aprendizaje (paso a paso).
+         */
+        function handleLearningPathAction() {
+            if (!currentLearningPathWord) return;
+            stopPathAnimation(); // Asegurar que la animación anterior se detenga
+
+            pathStep++;
+            const word = currentLearningPathWord.word;
+            const emoji = currentLearningPathWord.emoji;
+            const syllables = currentLearningPathWord.syllables;
+            const sentence = currentLearningPathWord.sentence;
+
+            // Limpiar área secundaria y estilos de borde
+            pathDisplaySecondaryContainer.innerHTML = '';
+            pathCardContainer.classList.remove('border-green-500', 'border-red-500');
+            pathCardContainer.classList.add('border-blue-400');
+            pathActionButton.textContent = 'Siguiente Paso';
+
+
+            if (pathStep === 1) {
+                // Paso 1: Grafemas (Letras)
+                pathInstruction.textContent = 'Paso 1/5: Conoce los Grafemas (Letras)';
+                pathActionButton.disabled = true; 
+
+                const letters = getLetters(word);
+                let letterIndex = 0;
+                pathDisplayPrimary.innerHTML = letters.map(l => `<span id="path-letter-${l}-${letterIndex++}" class="letter-display opacity-30">${l}</span>`).join('');
+                
+                // Resetear letterIndex para la animación
+                letterIndex = 0; 
+                // Animación de secuencia de letras
+                pathAnimationInterval = setInterval(() => {
+                    if (letterIndex < letters.length) {
+                        const letterSpan = pathDisplayPrimary.querySelector(`#path-letter-${letters[letterIndex]}-${letterIndex}`);
+                        // Solo hacer visible la primera vez que se encuentra la letra
+                        if (letterSpan && letterSpan.classList.contains('opacity-30')) {
+                            letterSpan.classList.remove('opacity-30');
+                        }
+                        speakText(letters[letterIndex]);
+                        letterIndex++;
+                    } else {
+                        stopPathAnimation();
+                        pathActionButton.disabled = false;
+                        pathActionButton.textContent = 'Ver Sílabas (Paso 2)';
+                    }
+                }, 800);
+
+            } else if (pathStep === 2) {
+                // Paso 2: Sílabas Separadas
+                pathInstruction.textContent = 'Paso 2/5: Lee las Sílabas Separadas';
+                pathActionButton.disabled = true; 
+                pathDisplayPrimary.innerHTML = syllables.map((s, i) => 
+                    `<span id="path-syllable-${i}" class="syllable-piece active text-blue-600 mx-2">${s}</span>`
+                ).join('');
+                
+                let syllableIndex = 0;
+                
+                // Animación de secuencia de sílabas
+                pathAnimationInterval = setInterval(() => {
+                    if (syllableIndex < syllables.length) {
+                        const currentSyllable = syllables[syllableIndex];
+                        // Resaltar la sílaba actual
+                        pathDisplayPrimary.querySelectorAll('span').forEach(span => span.style.backgroundColor = 'transparent');
+                        document.getElementById(`path-syllable-${syllableIndex}`).style.backgroundColor = '#dbeafe'; // blue-100
+                        
+                        speakText(currentSyllable);
+                        syllableIndex++;
+                    } else {
+                        stopPathAnimation();
+                        pathDisplayPrimary.querySelectorAll('span').forEach(span => span.style.backgroundColor = 'transparent');
+                        pathActionButton.disabled = false;
+                        pathActionButton.textContent = 'Unir Sílabas (Paso 3)';
+                    }
+                }, 1200);
+
+
+            } else if (pathStep === 3) {
+                // Paso 3: Unión Visual de Sílabas (Blending)
+                pathInstruction.textContent = 'Paso 3/5: Unión Visual de Sonidos (Blending)';
+                pathActionButton.textContent = 'Ver Palabra Completa (Paso 4)';
+
+                 // Mostrar las piezas separadas al inicio
+                pathDisplayPrimary.innerHTML = syllables.map((s, i) => 
+                    `<span id="path-syllable-final-${i}" class="syllable-piece active text-blue-600 mx-1">${s}</span>`
+                ).join('');
+                pathDisplaySecondaryContainer.innerHTML = ``;
+                
+                // Simular la "unión" de las sílabas
+                setTimeout(() => {
+                    pathDisplayPrimary.innerHTML = `
+                        <div class="text-7xl font-extrabold text-blue-600 bg-white p-4 rounded-lg shadow-xl border-4 border-blue-500 transform scale-110 transition-all duration-300">
+                            ${word}
+                        </div>
+                    `;
+                    speakText(word, 300); // Decir la palabra completa al unirse
+                    pathCardContainer.classList.add('border-green-500');
+                    pathCardContainer.classList.remove('border-blue-400');
+                }, 1000);
+                
+                
+            } else if (pathStep === 4) {
+                // Paso 4: Palabra Completa e Identificación Visual
+                pathInstruction.textContent = 'Paso 4/5: Asociación Palabra + Imagen';
+                
+                // Mostrar la palabra completa en grande
+                pathDisplayPrimary.innerHTML = `
+                    <span class="display-text text-blue-600 cursor-pointer" onclick="speakText('${word}')">${word}</span>
+                `;
+                pathDisplayPrimary.classList.remove('text-7xl', 'font-extrabold'); // Asegurar estilo grande
+                
+                // Mostrar el emoji/imagen asociado
+                pathDisplaySecondaryContainer.innerHTML = `
+                    <span class="text-4xl mr-3">${emoji}</span>
+                `;
+                pathActionButton.textContent = 'Ver Frase en Contexto (Paso 5)';
+                speakText(word, 300);
+                pathCardContainer.classList.remove('border-green-500');
+                pathCardContainer.classList.add('border-blue-400');
+
+
+            } else if (pathStep === 5) {
+                 // Paso 5 (Nuevo): Decodificación Fluida en Contexto
+                pathInstruction.textContent = 'Paso 5/5: Decodificación Fluida (Lectura en Contexto)';
+                pathActionButton.classList.add('hidden'); 
+                pathNextButton.classList.remove('hidden'); 
+
+                // Reemplazar la palabra clave en la frase con un estilo resaltado
+                const highlightedSentence = sentence.replace(word.toLowerCase(), `<span class="sentence-highlight">${word}</span>`);
+
+                pathDisplayPrimary.innerHTML = `
+                    <div class="text-3xl font-medium text-gray-700 leading-relaxed max-w-sm" onclick="speakText('${sentence}')">
+                        ${highlightedSentence}
+                    </div>
+                `;
+                pathDisplaySecondaryContainer.innerHTML = `
+                    <p class="text-lg text-gray-500">Haz clic en la frase para escucharla.</p>
+                `;
+                
+                speakText(sentence, 500); 
+                
+                pathCardContainer.classList.remove('border-blue-400');
+                pathCardContainer.classList.add('border-green-500');
+            }
+        }
+
+
+        // --- INICIALIZACIÓN ---
+        window.onload = () => {
+            changeView('menu');
+        };
+
+    </script>
+
+</body>
+</html>
