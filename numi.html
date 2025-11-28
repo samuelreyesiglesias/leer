@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Morpho-Blast: Colisión Cromática</title>
+    
+    <!-- Utilidades CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Motor de Física -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <!-- NUEVO: Librería de Sonido Sintetizado Tone.js (Carga rápida, cero latencia) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Fuente -->
+    <link href="https://fonts.googleapis.com/css2?family=Titan+One&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            font-family: 'Titan One', cursive;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            overflow: hidden;
+        }
+
+        /* --- CIELO VIBRANTE Y ANIMADO --- */
+        .sky-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: linear-gradient(180deg, #ff00cc 0%, #333399 30%, #000000 90%);
+            background-size: 200% 200%;
+            animation: skyAurora 6s ease infinite alternate;
+        }
+
+        @keyframes skyAurora {
+            0% { filter: hue-rotate(0deg); background-position: 50% 0%; }
+            100% { filter: hue-rotate(40deg); background-position: 50% 20%; }
+        }
+
+        .click-zone-glow {
+            position: absolute;
+            top: -10%;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+            z-index: 1;
+            pointer-events: none;
+            animation: glowPulse 2s infinite ease-in-out;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 0.6; transform: scaleY(1.1); }
+            100% { opacity: 0.3; transform: scaleY(1); }
+        }
+
+        canvas {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 100%;
+            z-index: 5; /* Canvas encima del fondo pero debajo de UI */
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .morph-text {
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        .attention-pulse {
+            animation: heartbeat 1.2s infinite;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- CAPAS DE FONDO ANIMADO -->
+    <div class="sky-layer"></div>
+    <div class="click-zone-glow"></div>
+
+    <!-- UI SUPERIOR -->
+    <div class="absolute top-4 left-4 right-4 flex justify-between items-start z-20 pointer-events-none">
+        <div class="glass-panel p-3 px-6 text-white pop-in">
+            <p class="text-xs text-blue-200 uppercase tracking-widest mb-1">Puntuación</p>
+            <h2 id="score-display" class="text-3xl text-yellow-400 morph-text">0</h2>
+        </div>
+        
+        <div class="glass-panel p-3 px-4 text-center pop-in" style="animation-delay: 0.1s;">
+            <p class="text-xs text-pink-200 uppercase tracking-widest mb-1">Siguiente</p>
+            <div id="next-preview" class="attention-pulse w-14 h-14 rounded-full bg-white mx-auto flex items-center justify-center text-black text-2xl border-4 border-pink-400 shadow-lg cursor-pointer pointer-events-auto">
+                1
+            </div>
+            <!-- Flecha animada indicando 'Arrastra aquí' -->
+            <div class="mt-2 text-white/70 text-xs animate-bounce">↓ TOCA ↓</div>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE INICIO -->
+    <div id="menu-overlay" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-500">
+        <h1 class="text-6xl md:text-8xl text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 mb-4 morph-text filter drop-shadow-lg text-center leading-tight p-4">
+            MORPHO<br>BLAST
+        </h1>
+        <p class="text-white/80 text-xl mb-8 max-w-md text-center font-sans">El cielo está cargado de energía.<br>¡Toca para liberar los números!</p>
+        <button id="start-btn" class="pointer-events-auto bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-purple-900 text-2xl py-4 px-12 rounded-full transform transition hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,165,0,0.6)] border-4 border-white/20">
+            JUGAR
+        </button>
+        <!-- Se eliminó la referencia a la música de fondo -->
+    </div>
+
+    <canvas id="world"></canvas>
+</div>
+
+<script>
+/**
+ * MORPHO-BLAST ENGINE V5 - ADDICTIVE SFX EDITION (Tone.js)
+ */
+
+const PALETTE = [
+    { color: '#FF0055', icon: '🍎' }, // Más neón
+    { color: '#00FFE5', icon: '🦆' }, 
+    { color: '#FFE600', icon: '🍌' }, 
+    { color: '#FF7700', icon: '🦊' }, 
+    { color: '#9D00FF', icon: '👾' }, 
+    { color: '#5500FF', icon: '🍇' }, 
+    { color: '#FF00AA', icon: '🐷' }, 
+    { color: '#00FFFF', icon: '💎' }, 
+    { color: '#FF4400', icon: '🌋' }, 
+    { color: '#0088FF', icon: '🐳' }, 
+    { color: '#FFCC00', icon: '👑' }, 
+];
+
+const Engine = Matter.Engine,
+      Bodies = Matter.Bodies,
+      Composite = Matter.Composite,
+      Events = Matter.Events,
+      Vector = Matter.Vector,
+      Body = Matter.Body;
+
+let engine, world;
+let canvas, ctx;
+let width, height;
+let gameActive = false;
+let score = 0;
+let nextValue = 1;
+let bubbles = []; 
+let particles = [];
+let ambientParticles = []; 
+let focusRings = 0; 
+
+const scoreEl = document.getElementById('score-display');
+const nextPreviewEl = document.getElementById('next-preview');
+const menuOverlay = document.getElementById('menu-overlay');
+const startBtn = document.getElementById('start-btn');
+
+// --- NUEVO: SISTEMA DE SONIDO ADICTIVO (Tone.js) ---
+let sfxLoaded = false;
+let mergeSynth, spawnSynth, shootSynth;
+
+function initSFX() {
+    if (sfxLoaded) return;
+    
+    // Tone.js requiere interacción del usuario para iniciar el contexto de audio
+    Tone.start();
+    sfxLoaded = true;
+
+    // 1. Sonido de Fusión (Acorde gratificante que sube de tono)
+    // Usamos PolySynth para poder tocar acordes
+    mergeSynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' }, // Sonido suave pero claro
+        envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.8 }
+    }).toDestination();
+    mergeSynth.volume.value = -6; // Volumen ajustado
+
+    // 2. Sonido de Agarre/Spawn (Un "pop" rápido y gomoso)
+    spawnSynth = new Tone.MembraneSynth({
+        pitchDecay: 0.05,
+        octaves: 2,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 }
+    }).toDestination();
+    spawnSynth.volume.value = -4;
+
+    // 3. Sonido de Lanzamiento (Un "whoosh" láser rápido)
+    shootSynth = new Tone.FMSynth({
+        modulationIndex: 10,
+        envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 },
+        modulation: { type: "square" },
+        modulationEnvelope: { attack: 0.1, decay: 0.01, sustain: 0.1, release: 0.1 }
+    }).toDestination();
+    shootSynth.volume.value = -8;
+}
+
+// Funciones helper para reproducir los sonidos
+function playMergeSFX(value) {
+    if(!sfxLoaded) return;
+    // El tono base sube dependiendo del valor del número creado.
+    // Usamos una escala pentatónica para que siempre suene bien.
+    const scale = ["C", "D", "E", "G", "A"];
+    const octave = 4 + Math.floor(value / 5);
+    const noteIndex = (value % 5);
+    const baseNote = scale[noteIndex] + octave;
+    
+    // Tocar un acorde mayor rápido basado en la nota base
+    mergeSynth.triggerAttackRelease([baseNote, Tone.Frequency(baseNote).transpose(4), Tone.Frequency(baseNote).transpose(7)], "16n");
+}
+
+function playSpawnSFX() {
+    if(!sfxLoaded) return;
+    // Tocar una nota muy grave y corta para el efecto "pop"
+    spawnSynth.triggerAttackRelease("C2", "32n");
+}
+
+function playShootSFX() {
+    if(!sfxLoaded) return;
+    // Tocar un barrido rápido para el efecto de lanzamiento
+    shootSynth.triggerAttackRelease("G5", "32n");
+}
+// --------------------------------------------------
+
+
+function init() {
+    canvas = document.getElementById('world');
+    ctx = canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+
+    engine = Engine.create();
+    world = engine.world;
+    engine.world.gravity.y = 0.8; 
+
+    createWalls();
+    Events.on(engine, 'collisionStart', handleCollisions);
+
+    for(let i=0; i<20; i++) {
+        ambientParticles.push(new AmbientParticle());
+    }
+
+    requestAnimationFrame(renderLoop);
+    setupInput();
+
+    startBtn.addEventListener('click', startGame);
+}
+
+function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    if(gameActive) createWalls();
+}
+
+function createWalls() {
+    Composite.clear(world, false, true);
+    const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.5, friction: 0.1 };
+    const thickness = 100;
+    Composite.add(world, [
+        Bodies.rectangle(width/2, height + thickness/2 - 10, width, thickness, wallOptions),
+        Bodies.rectangle(-thickness/2, height/2, thickness, height * 2, wallOptions),
+        Bodies.rectangle(width + thickness/2, height/2, thickness, height * 2, wallOptions)
+    ]);
+}
+
+function startGame() {
+    // Iniciar sistema de audio al interactuar por primera vez
+    initSFX();
+
+    gameActive = true;
+    menuOverlay.style.opacity = '0';
+    setTimeout(() => menuOverlay.style.display = 'none', 500);
+    
+    Composite.clear(world, false, true); 
+    const allBodies = Composite.allBodies(world);
+    allBodies.forEach(b => { if(!b.isStatic) Composite.remove(world, b); });
+    bubbles = [];
+    particles = [];
+    score = 0;
+    updateScore(0);
+    createWalls();
+    spawnBubble(width/2, 150, 1);
+}
+
+class Bubble {
+    constructor(x, y, value) {
+        this.value = value;
+        this.radius = 25 + (value * 5); 
+        if (this.radius > 60) this.radius = 60; 
+        
+        const pIndex = (value - 1) % PALETTE.length;
+        this.color = PALETTE[pIndex].color;
+        this.icon = PALETTE[pIndex].icon;
+        
+        this.body = Bodies.circle(x, y, this.radius, {
+            restitution: 0.7, friction: 0.05, density: 0.002, label: 'bubble'
+        });
+        this.body.bubbleRef = this;
+        Composite.add(world, this.body);
+        this.wobble = Math.random() * Math.PI * 2;
+    }
+
+    draw(isAiming) {
+        const pos = this.body.position;
+        const angle = this.body.angle;
+        const vel = this.body.velocity;
+        const speed = Vector.magnitude(vel);
+        const stretchFactor = 1 + (speed * 0.02);
+        this.wobble += 0.1;
+        const idleWobble = Math.sin(this.wobble) * 0.05;
+
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(angle);
+        
+        if (speed > 0.5) {
+            const velAngle = Math.atan2(vel.y, vel.x) - angle;
+            ctx.rotate(velAngle); ctx.scale(stretchFactor, 1/stretchFactor); ctx.rotate(-velAngle);
+        } else {
+            const aimShake = isAiming ? Math.sin(this.wobble * 2) * 0.1 : 0;
+            ctx.scale(1 + idleWobble + aimShake, 1 - idleWobble - aimShake);
+        }
+
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = isAiming ? 30 : 15; 
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.lineWidth = isAiming ? 6 : 4;
+        ctx.strokeStyle = isAiming ? "#fff" : "rgba(0,0,0,0.2)";
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.ellipse(-this.radius * 0.3, -this.radius * 0.3, this.radius * 0.2, this.radius * 0.1, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.fill();
+        ctx.rotate(-angle); 
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        if (speed > 1 || this.value >= 10 || isAiming) {
+            ctx.font = `${this.radius}px "Titan One"`; ctx.fillText(this.value, 0, 0);
+        } else {
+            ctx.font = `${this.radius * 0.8}px Arial`; ctx.fillText(this.icon, 0, 0);
+            ctx.font = `${this.radius * 0.4}px "Titan One"`; ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(this.value, 0, this.radius * 0.5);
+        }
+        ctx.restore();
+    }
+}
+
+function handleCollisions(event) {
+    const pairs = event.pairs;
+    for (let i = 0; i < pairs.length; i++) {
+        const bodyA = pairs[i].bodyA;
+        const bodyB = pairs[i].bodyB;
+        if (bodyA.label === 'bubble' && bodyB.label === 'bubble') {
+            const b1 = bodyA.bubbleRef;
+            const b2 = bodyB.bubbleRef;
+            if (b1 && b2 && b1.value === b2.value && !b1.dead && !b2.dead) {
+                mergeBubbles(b1, b2);
+            }
+        }
+    }
+}
+
+function mergeBubbles(b1, b2) {
+    b1.dead = true; b2.dead = true;
+    const midX = (b1.body.position.x + b2.body.position.x) / 2;
+    const midY = (b1.body.position.y + b2.body.position.y) / 2;
+    const newValue = b1.value + 1; 
+    
+    // SFX: Reproducir sonido de fusión gratificante
+    playMergeSFX(newValue);
+    
+    createExplosion(midX, midY, b1.color, 15);
+    updateScore(score + (Math.pow(2, newValue) * 10));
+    Composite.remove(world, [b1.body, b2.body]);
+    bubbles = bubbles.filter(b => b !== b1 && b !== b2);
+    setTimeout(() => { spawnBubble(midX, midY, newValue); }, 50); 
+}
+
+function spawnBubble(x, y, val) {
+    const b = new Bubble(x, y, val);
+    bubbles.push(b);
+    return b;
+}
+
+// --- INTERACCIÓN Y EFECTOS ---
+let dragStart = null;
+let currentDragPos = null;
+let aimingBubble = null;
+
+function ensureNextBubble() {
+    if (!aimingBubble && gameActive) {
+        nextValue = Math.floor(Math.random() * 3) + 1;
+        const pIndex = (nextValue - 1) % PALETTE.length;
+        nextPreviewEl.style.backgroundColor = PALETTE[pIndex].color;
+        nextPreviewEl.innerText = nextValue;
+        nextPreviewEl.style.animationDuration = "0.5s"; 
+    }
+}
+
+function setupInput() {
+    const touchHandler = (e) => {
+        if(!gameActive) return;
+        const touch = e.touches ? e.touches[0] : e;
+        const x = touch.clientX; const y = touch.clientY;
+
+        if (e.type === 'mousedown' || e.type === 'touchstart') {
+            if (y < height * 0.6) { 
+                // SFX: Sonido de agarre "pop"
+                playSpawnSFX();
+                aimingBubble = spawnBubble(x, 150, nextValue); 
+                Body.setPosition(aimingBubble.body, {x: x, y: 150});
+                Body.setStatic(aimingBubble.body, true);
+                dragStart = { x, y }; currentDragPos = { x, y };
+                createExplosion(x, 150, "#fff", 8); 
+            }
+        } else if (e.type === 'mousemove' || e.type === 'touchmove') {
+            if (aimingBubble && dragStart) {
+                currentDragPos = { x, y };
+                Body.setPosition(aimingBubble.body, { x: x, y: aimingBubble.body.position.y });
+            }
+        } else if (e.type === 'mouseup' || e.type === 'touchend') {
+            if (aimingBubble && dragStart) {
+                // SFX: Sonido de lanzamiento "whoosh"
+                playShootSFX();
+                Body.setStatic(aimingBubble.body, false);
+                Body.applyForce(aimingBubble.body, aimingBubble.body.position, { x: 0, y: 0.05 * aimingBubble.body.mass });
+                aimingBubble = null; dragStart = null;
+                nextPreviewEl.style.animationDuration = "1.5s";
+                setTimeout(ensureNextBubble, 800);
+            }
+        }
+    };
+    canvas.addEventListener('mousedown', touchHandler); canvas.addEventListener('mousemove', touchHandler); window.addEventListener('mouseup', touchHandler);
+    canvas.addEventListener('touchstart', touchHandler); canvas.addEventListener('touchmove', touchHandler); window.addEventListener('touchend', touchHandler);
+}
+
+// --- EFECTOS VISUALES AVANZADOS (Partículas y Foco) ---
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 5 + 2;
+        this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+        this.life = 1.0; this.decay = Math.random() * 0.03 + 0.01;
+    }
+    update() { this.x += this.vx; this.y += this.vy; this.vy += 0.2; this.life -= this.decay; }
+    draw(ctx) {
+        const renderLife = Math.max(0, this.life);
+        ctx.globalAlpha = renderLife; ctx.fillStyle = this.color; ctx.beginPath();
+        ctx.arc(this.x, this.y, Math.max(0, 5 * renderLife), 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    }
+}
+
+class AmbientParticle {
+    constructor() { this.reset(); this.y = Math.random() * (height * 0.4); }
+    reset() {
+        this.x = Math.random() * width; this.y = Math.random() * (height * 0.4); 
+        this.size = Math.random() * 3 + 1; this.speedY = Math.random() * 0.5 + 0.1;
+        this.opacity = Math.random() * 0.5 + 0.1; this.color = Math.random() > 0.5 ? '#FFF' : '#FF00CC';
+    }
+    update() { this.y -= this.speedY; this.opacity -= 0.005; if(this.y < 0 || this.opacity <= 0) this.reset(); }
+    draw(ctx) {
+        ctx.globalAlpha = Math.max(0, this.opacity); ctx.fillStyle = this.color; ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+    }
+}
+
+function createExplosion(x, y, color, count) {
+    for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
+}
+
+function drawFocusEffects(bubble) {
+    if(!bubble) return;
+    const pos = bubble.body.position;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.fillRect(0, 0, width, height);
+    ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath();
+    ctx.arc(pos.x, pos.y, bubble.radius * 2.5, 0, Math.PI*2); ctx.fillStyle = 'rgba(0,0,0,1)'; ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    focusRings += 0.05;
+    for(let i=0; i<3; i++) {
+        let r = bubble.radius + 10 + (focusRings * 20 + i * 30) % 100;
+        let alpha = 1 - (r - bubble.radius) / 120; if(alpha < 0) alpha = 0;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(pos.x, pos.y + bubble.radius + 10); ctx.lineTo(pos.x, height);
+    ctx.setLineDash([10, 10]); ctx.strokeStyle = `rgba(255, 255, 255, 0.5)`; ctx.lineWidth = 3; ctx.stroke(); ctx.setLineDash([]);
+}
+
+function updateScore(val) {
+    score = val; scoreEl.innerText = score;
+    scoreEl.style.transform = "scale(1.5)"; setTimeout(() => scoreEl.style.transform = "scale(1)", 200);
+}
+
+function renderLoop() {
+    if(gameActive) Engine.update(engine, 1000 / 60);
+    ctx.clearRect(0, 0, width, height);
+    ambientParticles.forEach(p => { p.update(); p.draw(ctx); });
+    bubbles.forEach(b => { if(b !== aimingBubble) b.draw(false); });
+    if (aimingBubble && dragStart) { drawFocusEffects(aimingBubble); aimingBubble.draw(true); }
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i]; p.update(); p.draw(ctx); if (p.life <= 0) particles.splice(i, 1);
+    }
+    requestAnimationFrame(renderLoop);
+}
+
+init();
+ensureNextBubble();
+</script>
+</body>
+</html>
