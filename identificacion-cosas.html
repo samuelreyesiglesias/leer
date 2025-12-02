@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Inmersivo para Niños - Toca y Aprende</title>
+    <!-- Carga de Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga de la fuente Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Carga de Tone.js para efectos de sonido simples -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Carga de Three.js para el fondo 3D inmersivo -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Estilos generales y 3D */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; 
+            color: #333;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #three-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.9; /* Fondo 3D más prominente */
+        }
+
+        .container-wrapper {
+            max-width: 900px;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* CERO BORDES / FONDO */
+        .card-game {
+            background-color: transparent; /* TOTALMENTE TRANSPARENTE */
+            box-shadow: none;
+            border-radius: 0;
+            backdrop-filter: none;
+        }
+        
+        /* Botones y Emojis - Minimalismo */
+        .emoji-button {
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            user-select: none;
+            will-change: transform, box-shadow, background-color;
+            font-size: 5rem;
+            line-height: 1;
+            border: none;
+            background-color: #ffffff; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); /* Sombra flotante más suave */
+            border-radius: 9999px; /* Botón Círculo */
+            aspect-ratio: 1 / 1; /* Forzar forma cuadrada/círculo en la cuadrícula */
+        }
+        .emoji-button:hover {
+            transform: scale(1.15); /* Más dinámico */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background-color: #f5f5f5;
+        }
+        
+        /* Clases de animación */
+        /* Animación de acierto más rápida y brillante */
+        .correct-animation {
+            animation: pulse-green 0.4s ease-out;
+            box-shadow: 0 0 60px rgba(74, 222, 128, 1) !important;
+            transform: scale(1.15);
+        }
+        .incorrect-animation {
+            animation: shake-red 0.4s ease-out;
+            box-shadow: 0 0 40px rgba(248, 113, 113, 1) !important;
+        }
+
+        /* Keyframes más explosivos */
+        @keyframes pulse-green {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 1; } /* Explosión más grande */
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shake-red {
+            0%, 100% { transform: translateX(0) scale(1.1); }
+            20%, 60% { transform: translateX(-25px) scale(1.1); }
+            40%, 80% { transform: translateX(25px) scale(1.1); }
+        }
+
+        /* Botón de audio (Replay) - Más GRANDE y FÁCIL */
+        #audio-prompt {
+            transition: transform 0.1s ease-in-out;
+            background-color: #10b981; /* Verde esmeralda vibrante para escuchar */
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5);
+            /* Tamaño aún más grande en desktop */
+        }
+        #audio-prompt:active {
+            transform: scale(0.9);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.8);
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .emoji-button {
+                font-size: 12rem; /* Emojis gigantes */
+            }
+            #audio-prompt {
+                padding: 3rem; /* Botón de audio más grande */
+            }
+            #audio-prompt svg {
+                 height: 4rem; 
+                 width: 4rem;
+            }
+        }
+        @media (max-width: 767px) {
+            .emoji-button {
+                font-size: 7rem; 
+            }
+            #audio-prompt {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- CANVAS para el fondo 3D (Three.js) -->
+    <canvas id="three-bg"></canvas>
+
+    <div class="container-wrapper mx-auto">
+        <div class="card-game p-6 md:p-10 text-center">
+
+            <!-- CERO TEXTO: Eliminamos el título visible y la instrucción textual -->
+            <h1 class="sr-only">Juego de Reconocimiento Auditivo</h1>
+            
+            <!-- Área de Pregunta (Instrucción Auditiva) -->
+            <div id="prompt-area" class="mb-10 p-4 rounded-2xl">
+                <!-- Botón de Audio: EL ÚNICO FOCO DE LA INSTRUCCIÓN Y REPLAY -->
+                <button id="audio-prompt" class="text-white rounded-full transition duration-150 transform hover:scale-110" aria-label="Escuchar la instrucción">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    <!-- El texto de la pregunta (solo para accesibilidad) -->
+                    <span id="current-question-text" class="sr-only"></span>
+                </button>
+            </div>
+
+            <!-- Área de Respuestas (Emojis) -->
+            <div id="options-area" class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+                <!-- Los botones emoji se generan con JavaScript aquí -->
+            </div>
+
+            <!-- Área de Mensajes (Feedback al niño) -->
+            <div id="feedback-message" class="mt-12 h-16 text-7xl md:text-8xl" aria-live="polite">
+                <!-- Los emojis de feedback aparecen aquí -->
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        // Diccionario de Objetos con Artículo Correcto
+        const learningObjects = [
+            { id: 1, emoji: '🐶', name: 'Perro', article: 'el' },
+            { id: 2, emoji: '🍎', name: 'Manzana', article: 'la' },
+            { id: 3, emoji: '🚗', name: 'Coche', article: 'el' },
+            { id: 4, emoji: '🏠', name: 'Casa', article: 'la' },
+            { id: 5, emoji: '🍌', name: 'Plátano', article: 'el' },
+            { id: 6, emoji: '🐱', name: 'Gato', article: 'el' },
+            { id: 7, emoji: '⚽', name: 'Pelota', article: 'la' },
+            { id: 8, emoji: '☀️', name: 'Sol', article: 'el' },
+            { id: 9, emoji: '🐘', name: 'Elefante', article: 'el' },
+            { id: 10, emoji: '🌈', name: 'Arcoíris', article: 'el' },
+            { id: 11, emoji: '🥛', name: 'Vaso de Leche', article: 'el' },
+            { id: 12, emoji: '🚒', name: 'Camión de Bomberos', article: 'el' },
+            { id: 13, emoji: '🌷', name: 'Flor', article: 'la' },
+            { id: 14, emoji: '📘', name: 'Libro', article: 'el' },
+            { id: 15, emoji: '🐻', name: 'Oso', article: 'el' },
+            { id: 16, emoji: '🎈', name: 'Globo', article: 'el' },
+        ];
+
+        let currentQuestion = {};
+        const optionsArea = document.getElementById('options-area');
+        const audioPromptButton = document.getElementById('audio-prompt');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const currentQuestionText = document.getElementById('current-question-text');
+        
+        let isAudioContextStarted = false;
+
+        // --- Configuración y Herramientas Multisensoriales (Sonido y Voz) ---
+
+        const feedbackSynth = new Tone.Synth({
+            oscillator: { type: 'triangle' }, 
+            envelope: {
+                attack: 0.01,
+                decay: 0.2,
+                sustain: 0.1,
+                release: 0.5 
+            }
+        }).toDestination();
+
+        async function startAudioContext() {
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+                isAudioContextStarted = true;
+            }
+        }
+
+        // 2. Funciones de Audio
+        function playCorrectSound() {
+            if (!isAudioContextStarted) return;
+            const now = Tone.now();
+            feedbackSynth.triggerAttackRelease("G5", "8n", now);
+            feedbackSynth.triggerAttackRelease("C6", "8n", now + 0.1);
+            feedbackSynth.triggerAttackRelease("E6", "4n", now + 0.2); // Más agudo y alegre
+        }
+
+        function playIncorrectSound() {
+            if (!isAudioContextStarted) return;
+            const now = Tone.now();
+            feedbackSynth.triggerAttackRelease("D4", "8n", now);
+            feedbackSynth.triggerAttackRelease("B3", "8n", now + 0.1);
+            feedbackSynth.triggerAttackRelease("G3", "4n", now + 0.2); // Más grave y de error
+        }
+
+        // 3. Configuración de Voz (TTS)
+        const voice = new SpeechSynthesisUtterance();
+        voice.volume = 1;
+        voice.rate = 0.7;  // Muy lento y claro
+        voice.pitch = 1.5; // Tono alto, infantil y natural
+        
+        window.speechSynthesis.onvoiceschanged = () => {
+            const voices = window.speechSynthesis.getVoices();
+            const spanishVoice = voices.find(v => v.lang === 'es-ES' || v.lang === 'es-MX' || v.lang.startsWith('es'));
+            if (spanishVoice) {
+                voice.voice = spanishVoice;
+            }
+        };
+
+
+        // --- Lógica del Juego ---
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function generateNewQuestion() {
+            const shuffledObjects = shuffle([...learningObjects]);
+            const options = shuffledObjects.slice(0, 4);
+            const correctAnswer = options[Math.floor(Math.random() * options.length)];
+
+            currentQuestion = {
+                target: correctAnswer,
+                options: options,
+                // Instrucción mínima y esencial para voz
+                promptText: `${correctAnswer.article} ${correctAnswer.name}.`, 
+            };
+
+            currentQuestionText.textContent = currentQuestion.promptText;
+            renderOptions(options);
+            feedbackMessage.innerHTML = '';
+            
+            audioPromptButton.disabled = false;
+            optionsArea.querySelectorAll('button').forEach(btn => btn.disabled = false);
+
+            document.querySelector('.card-game').classList.remove('correct-animation', 'incorrect-animation');
+            
+            // Auto-reproducir el audio inmediatamente
+            setTimeout(speakPrompt, 500); 
+        }
+
+        function renderOptions(options) {
+            optionsArea.innerHTML = '';
+            options.forEach(obj => {
+                const button = document.createElement('button');
+                button.className = 'emoji-button bg-white rounded-full shadow-md hover:bg-gray-50 flex items-center justify-center';
+                button.setAttribute('data-id', obj.id);
+                button.innerHTML = obj.emoji;
+                button.onclick = () => handleAnswer(obj.id);
+                button.title = obj.name; 
+                optionsArea.appendChild(button);
+            });
+        }
+
+        function handleAnswer(selectedId) {
+            optionsArea.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            audioPromptButton.disabled = true;
+
+            const selectedButton = document.querySelector(`[data-id="${selectedId}"]`);
+
+            if (selectedId === currentQuestion.target.id) {
+                playCorrectSound();
+                selectedButton.classList.add('correct-animation');
+                document.querySelector('.card-game').classList.add('correct-animation');
+                // Feedback solo con EMOJI gigante
+                feedbackMessage.innerHTML = `🎉`; 
+                setTimeout(generateNewQuestion, 2000); 
+
+            } else {
+                playIncorrectSound();
+                selectedButton.classList.add('incorrect-animation');
+                document.querySelector('.card-game').classList.remove('correct-animation');
+                document.querySelector('.card-game').classList.add('incorrect-animation');
+                // Feedback solo con EMOJI gigante
+                feedbackMessage.innerHTML = `❌`;
+                
+                setTimeout(() => {
+                    optionsArea.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                    audioPromptButton.disabled = false;
+                    selectedButton.classList.remove('incorrect-animation');
+                    document.querySelector('.card-game').classList.remove('incorrect-animation');
+                    
+                    // Repetir el audio para re-intentar
+                    speakPrompt(); 
+                }, 1500); 
+            }
+        }
+
+        async function speakPrompt() {
+            await startAudioContext(); 
+            
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            // La instrucción principal para el niño
+            voice.text = `Toca ${currentQuestion.promptText}`; 
+            window.speechSynthesis.speak(voice);
+
+            audioPromptButton.classList.add('ring-8', 'ring-green-300', 'animate-pulse');
+            
+            voice.onend = () => {
+                audioPromptButton.classList.remove('ring-8', 'ring-green-300', 'animate-pulse');
+            };
+        }
+
+        audioPromptButton.addEventListener('click', speakPrompt);
+
+        // --- Lógica Three.js (3D Inmersivo) ---
+
+        const canvas = document.getElementById('three-bg');
+        let scene, camera, renderer, particles = [];
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xf0f4f8, 1, 15); 
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Más luz
+            scene.add(ambientLight);
+
+            const geometry = new THREE.SphereGeometry(0.3, 8, 8); 
+            const colors = [0xff69b4, 0x00ff7f, 0x1e90ff, 0xffd700]; 
+
+            for (let i = 0; i < 40; i++) {
+                const material = new THREE.MeshBasicMaterial({ // Material básico para máximo color
+                    color: colors[i % colors.length], 
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                mesh.position.x = (Math.random() - 0.5) * 20; 
+                mesh.position.y = (Math.random() - 0.5) * 20;
+                mesh.position.z = (Math.random() - 0.5) * 15;
+                
+                mesh.userData.speedX = (Math.random() - 0.5) * 0.005; // Más rápido
+                mesh.userData.speedY = (Math.random() - 0.5) * 0.005; // Más rápido
+                
+                particles.push(mesh);
+                scene.add(mesh);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particles.forEach(p => {
+                p.rotation.x += 0.015; // Más rotación
+                p.rotation.y += 0.01;
+
+                p.position.x += p.userData.speedX;
+                p.position.y += p.userData.speedY;
+
+                // Reiniciar posición
+                if (p.position.x > 10 || p.position.x < -10 || p.position.y > 10 || p.position.y < -10) {
+                    p.position.x = (Math.random() - 0.5) * 5;
+                    p.position.y = (Math.random() - 0.5) * 5;
+                    p.position.z = -5;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Inicialización y arranque
+        window.onload = function () {
+            initThree();
+            animate();
+            window.addEventListener('resize', onWindowResize, false);
+            generateNewQuestion();
+        };
+        
+    </script>
+</body>
+</html>
