@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colisión de Letras y Textos</title>
+    
+    <!-- Carga de librerías -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.min.js"></script>
+    
+    <style>
+        /* Estilos esenciales para móvil: eliminar márgenes y desbordamiento */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Evitar barras de desplazamiento */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a;
+            font-family: 'Inter', sans-serif;
+        }
+        canvas {
+            display: block; /* Elimina el espacio inferior de la imagen */
+        }
+        #instructions {
+            position: fixed;
+            top: 10px;
+            width: 90%;
+            text-align: center;
+            color: #ccc;
+            font-size: 14px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">Toca o haz clic en la pantalla para crear nuevas letras y observa cómo colisionan.</div>
+
+    <script>
+        // Alias para Matter.js (simplifica el código)
+        const Engine = Matter.Engine,
+              World = Matter.World,
+              Bodies = Matter.Bodies,
+              Events = Matter.Events; // Añadido para detección de eventos
+
+        let engine;
+        let world;
+        let ground;
+        let letters = []; // Array para almacenar todos los cuerpos de las letras
+        const LETTERS_TO_USE = "COLISION"; // Texto base para las letras que caen
+        let letterIndex = 0;
+
+        // Tamaño del cuerpo de la letra, ajustable para móvil
+        const LETTER_SIZE = 40; 
+        
+        // --- 1. SETUP (Configuración Inicial) ---
+        function setup() {
+            // Se usa windowWidth y windowHeight para que ocupe toda la pantalla del móvil
+            createCanvas(windowWidth, windowHeight); 
+
+            // Configurar el motor de física (Matter.js)
+            engine = Engine.create();
+            world = engine.world;
+            world.gravity.y = 1; // Gravedad normal
+
+            // Crear el suelo estático (Ground)
+            const groundHeight = 50;
+            let groundOptions = {
+                isStatic: true,
+                restitution: 0.1, // Poco rebote en el suelo
+                friction: 1
+            };
+            ground = Bodies.rectangle(width / 2, height - groundHeight / 2, width, groundHeight, groundOptions);
+            World.add(world, ground);
+            
+            // Configurar el estilo del texto en p5.js
+            textAlign(CENTER, CENTER);
+            textSize(LETTER_SIZE);
+            noStroke(); // Sin borde en las letras
+            
+            // Opcional: Llamar a la función para añadir algunas letras iniciales
+            addLetter(width / 4, 50, "C");
+            addLetter(width / 2, 0, "O");
+            addLetter(width * 3 / 4, 100, "L");
+
+            // Configurar la detección de colisiones (para el futuro efecto de explosión/sonido)
+            Events.on(engine, 'collisionStart', handleCollision);
+        }
+
+        // --- 2. DRAW (Bucle de Dibujo) ---
+        function draw() {
+            background(20, 20, 40); // Fondo azul oscuro inmersivo
+
+            // Actualizar el motor de física
+            Engine.update(engine); 
+
+            // Dibujar el suelo
+            drawGround(ground);
+            
+            // Dibujar todas las letras
+            for (let i = 0; i < letters.length; i++) {
+                drawLetter(letters[i]);
+            }
+        }
+        
+        // --- 3. RESPONSIVE (Manejo de Redimensionamiento de Ventana/Móvil) ---
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            
+            // Ajustar la posición y tamaño del suelo al nuevo tamaño de la ventana
+            const groundHeight = 50;
+            Matter.Body.setPosition(ground, { x: width / 2, y: height - groundHeight / 2 });
+            Matter.Body.setVertices(ground, [
+                { x: 0, y: height - groundHeight }, 
+                { x: width, y: height - groundHeight }, 
+                { x: width, y: height }, 
+                { x: 0, y: height }
+            ]);
+        }
+
+        // --- 4. INTERACCIÓN (Manejo Táctil para Móvil) ---
+        function touchStarted() {
+            // Detener el comportamiento de arrastrar en móvil si no estamos usando p5.touch
+            if (touches.length > 0) {
+                // Usamos touches[0] para la primera posición táctil
+                addLetter(touches[0].x, touches[0].y, LETTERS_TO_USE[letterIndex]);
+                letterIndex = (letterIndex + 1) % LETTERS_TO_USE.length; // Ciclar entre las letras
+            } else {
+                // Para clics de ratón en escritorio
+                 addLetter(mouseX, mouseY, LETTERS_TO_USE[letterIndex]);
+                 letterIndex = (letterIndex + 1) % LETTERS_TO_USE.length;
+            }
+            return false; // Evitar el comportamiento de desplazamiento nativo del navegador
+        }
+        
+        // --- 5. LÓGICA DE JUEGO (Creación y Dibujo) ---
+
+        /**
+         * Función para crear un nuevo cuerpo de letra y añadirlo al mundo.
+         * @param {number} x Posición X inicial.
+         * @param {number} y Posición Y inicial.
+         * @param {string} text El carácter a dibujar.
+         */
+        function addLetter(x, y, text) {
+            let options = {
+                restitution: 0.9, // Alto rebote
+                density: 0.005,
+                frictionAir: 0.01 // Resistencia al aire baja
+            };
+            
+            // Creamos un cuerpo circular para mejor comportamiento en colisiones de texto
+            let body = Bodies.circle(x, y, LETTER_SIZE / 2, options); 
+            body.label = "letter"; // Etiqueta para identificarlo en colisiones
+            body.text = text;      // Almacena el texto a dibujar
+            
+            World.add(world, body);
+            letters.push(body);
+        }
+
+        /**
+         * Dibuja un cuerpo de Matter.js como texto.
+         */
+        function drawLetter(body) {
+            let pos = body.position;
+            let angle = body.angle;
+            let radius = body.circleRadius || LETTER_SIZE / 2;
+
+            push(); 
+            translate(pos.x, pos.y);
+            rotate(angle); 
+
+            // Relleno de color dinámico para las letras
+            // Usaremos un color basado en la letra, por ejemplo, para distinción visual
+            let hue = map(body.text.charCodeAt(0), 65, 90, 0, 360); // Mapeo de ASCII a HUE
+            colorMode(HSB, 360, 100, 100);
+            fill(hue, 90, 90); 
+            
+            // Dibuja el texto
+            textSize(radius * 1.5); // Ajusta el tamaño de fuente al radio
+            text(body.text, 0, 0); 
+            
+            // Opcional: Dibujar el círculo de colisión para debug
+            // fill(255, 0, 0, 50); 
+            // ellipse(0, 0, radius * 2);
+
+            pop(); 
+            colorMode(RGB, 255); // Volver al modo de color RGB por defecto
+        }
+
+        /**
+         * Dibuja el suelo (Ground).
+         */
+        function drawGround(body) {
+            let pos = body.position;
+            let w = width; // El ancho es el de la ventana
+            let h = body.bounds.max.y - body.bounds.min.y;
+
+            push();
+            fill(100, 100, 100); 
+            rectMode(CENTER);
+            rect(pos.x, pos.y, w, h);
+            pop();
+        }
+        
+        // --- 6. MANEJO DE COLISIONES (Efectos Multisensoriales) ---
+        
+        // Manejador de colisión (simplificado)
+        function handleCollision(event) {
+            const pairs = event.pairs;
+
+            for (let i = 0; i < pairs.length; i++) {
+                const pair = pairs[i];
+                const bodyA = pair.bodyA;
+                const bodyB = pair.bodyB;
+
+                // Solo nos interesan las colisiones entre dos "letras"
+                if (bodyA.label === 'letter' && bodyB.label === 'letter') {
+                    // Si la colisión es fuerte (basado en la velocidad de impacto)
+                    const impactVelocity = Math.abs(pair.collision.normal.x * (bodyA.velocity.x - bodyB.velocity.x) + 
+                                                    pair.collision.normal.y * (bodyA.velocity.y - bodyB.velocity.y));
+
+                    if (impactVelocity > 10) { // Umbral de impacto para detonar la explosión
+                        // Por ahora, solo logueamos la explosión
+                        console.log(`¡Explosión entre ${bodyA.text} y ${bodyB.text}!`);
+                        
+                        // NOTA: Aquí es donde se añadirían los efectos multisensoriales:
+                        // 1. Reproducir un sonido de "boom" con Howler.js (Se requiere librería externa)
+                        // 2. Ejecutar la animación de partículas en la posición de colisión
+                        // 3. Eliminar los cuerpos del mundo: 
+                        // World.remove(world, bodyA); 
+                        // World.remove(world, bodyB);
+                    }
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>
