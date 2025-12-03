@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luz Estelar | Motivación del Alma</title>
+    
+    <!-- Fuentes Elegantes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Quicksand:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js (3D) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- GSAP (Animaciones) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glow-color: rgba(255, 215, 0, 0.6); /* Dorado por defecto */
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Quicksand', sans-serif;
+            color: white;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
+            transition: background 1s ease;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+        }
+
+        .text-glow {
+            text-shadow: 0 0 15px var(--glow-color), 0 0 30px var(--glow-color);
+        }
+
+        .title-font {
+            font-family: 'Cinzel Decorative', cursive;
+        }
+
+        .quote-font {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Botones de Categoría */
+        .category-btn {
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .category-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: 0.5s;
+        }
+
+        .category-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .category-btn:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Botón Principal Mágico */
+        .magic-btn {
+            background: linear-gradient(45deg, #ff00cc, #333399, #ff00cc);
+            background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+        }
+        
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Animación suave para la cita */
+        .fade-in-up {
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden-section {
+            display: none;
+            opacity: 0;
+        }
+
+        /* Scrollbar invisible para citas largas */
+        .custom-scroll::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center relative">
+
+    <!-- Canvas 3D -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Principal -->
+    <main class="relative z-10 w-full max-w-5xl p-6 flex flex-col items-center justify-center h-full">
+        
+        <!-- Header -->
+        <header id="main-header" class="text-center mb-6 transition-all duration-700">
+            <div class="inline-block p-2 px-4 rounded-full glass-panel mb-4 text-xs tracking-[0.3em] text-pink-200 uppercase animate-pulse">
+                Frecuencia Vibratoria Alta
+            </div>
+            <h1 class="title-font text-5xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-b from-white via-pink-100 to-purple-200 mb-2 filter drop-shadow-lg">
+                Luz Estelar
+            </h1>
+            <p class="font-light text-xl md:text-2xl text-purple-200/80 tracking-wide">
+                ¿Qué necesita tu alma escuchar hoy?
+            </p>
+        </header>
+
+        <!-- Selector de Categoría (Mood) -->
+        <div id="mood-selector" class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 transition-all duration-500">
+            
+            <button onclick="selectMood('strength')" class="category-btn rounded-2xl p-6 flex flex-col items-center group">
+                <span class="text-4xl mb-3 transform group-hover:scale-110 transition-transform duration-300">🦁</span>
+                <h3 class="text-xl font-bold text-orange-100 tracking-wider">Fuerza</h3>
+                <p class="text-xs text-orange-200/60 mt-2 font-light">Para momentos difíciles</p>
+            </button>
+
+            <button onclick="selectMood('love')" class="category-btn rounded-2xl p-6 flex flex-col items-center group">
+                <span class="text-4xl mb-3 transform group-hover:scale-110 transition-transform duration-300">💖</span>
+                <h3 class="text-xl font-bold text-pink-100 tracking-wider">Amor Propio</h3>
+                <p class="text-xs text-pink-200/60 mt-2 font-light">Sana tu corazón</p>
+            </button>
+
+            <button onclick="selectMood('success')" class="category-btn rounded-2xl p-6 flex flex-col items-center group">
+                <span class="text-4xl mb-3 transform group-hover:scale-110 transition-transform duration-300">🚀</span>
+                <h3 class="text-xl font-bold text-yellow-100 tracking-wider">Éxito</h3>
+                <p class="text-xs text-yellow-200/60 mt-2 font-light">Motivación y Metas</p>
+            </button>
+
+            <button onclick="selectMood('calm')" class="category-btn rounded-2xl p-6 flex flex-col items-center group">
+                <span class="text-4xl mb-3 transform group-hover:scale-110 transition-transform duration-300">🧘</span>
+                <h3 class="text-xl font-bold text-blue-100 tracking-wider">Calma</h3>
+                <p class="text-xs text-blue-200/60 mt-2 font-light">Paz y Ansiedad</p>
+            </button>
+
+        </div>
+
+        <!-- Tarjeta de Inspiración (Oculta al inicio) -->
+        <div id="quote-card" class="hidden-section glass-panel rounded-[3rem] p-8 md:p-12 w-full max-w-3xl mt-4 text-center border-t border-white/20 relative overflow-hidden">
+            
+            <!-- Botón Cerrar/Volver -->
+            <button onclick="reset()" class="absolute top-6 right-8 text-white/30 hover:text-white transition-colors text-3xl z-20">&times;</button>
+            
+            <!-- Elementos Decorativos -->
+            <div class="absolute top-[-20%] left-[-10%] w-64 h-64 bg-pink-500/20 rounded-full blur-[80px]"></div>
+            <div class="absolute bottom-[-20%] right-[-10%] w-64 h-64 bg-blue-500/20 rounded-full blur-[80px]"></div>
+
+            <div class="relative z-10 flex flex-col items-center h-full justify-center">
+                
+                <div class="mb-6 opacity-80">
+                    <span id="quote-icon" class="text-6xl filter drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">✨</span>
+                </div>
+
+                <div class="custom-scroll max-h-[50vh] overflow-y-auto px-4">
+                    <h2 id="quote-text" class="quote-font text-3xl md:text-5xl leading-tight text-white mb-8 text-glow font-medium italic">
+                        "El universo no comete errores. Si estás aquí, es porque tu luz es necesaria."
+                    </h2>
+                </div>
+                
+                <div class="w-24 h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent mb-6 rounded-full"></div>
+
+                <div class="bg-black/20 rounded-xl p-4 px-8 border border-white/5 backdrop-blur-sm transform transition hover:scale-105 duration-300">
+                    <p class="text-xs text-gray-300 uppercase tracking-[0.2em] mb-1">Mantra de Activación</p>
+                    <p id="quote-mantra" class="text-lg md:text-xl font-bold text-white/90 font-sans"></p>
+                </div>
+
+                <button onclick="generateNewQuote()" class="mt-8 text-white/60 hover:text-white text-sm uppercase tracking-widest border-b border-transparent hover:border-white transition-all pb-1">
+                    ↻ Otra dosis de magia
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- BASE DE DATOS DE INSPIRACIÓN ---
+        const quotesDB = {
+            strength: {
+                color: 0xff6600, // Naranja
+                bgGradient: "radial-gradient(circle at center, #2e100b 0%, #000000 100%)",
+                icon: "🔥",
+                quotes: [
+                    // 1-10: Resiliencia pura
+                    { text: "No estás atravesando una tormenta, tú ERES la tormenta. Nada puede derribarte si tú decides mantenerte en pie.", mantra: "Soy inquebrantable." },
+                    { text: "Tus cicatrices son medallas de oro de batallas que ganaste en silencio. Siéntete orgulloso de tu historia.", mantra: "Honro mi fuerza." },
+                    { text: "Cuando sientas que no puedes más, recuerda que tu 'yo' del pasado ni siquiera soñaba con la fortaleza que tienes hoy.", mantra: "Sigo adelante con poder." },
+                    { text: "El diamante solo brilla después de soportar una presión inmensa. Estás en proceso de volverte brillante.", mantra: "Me estoy transformando." },
+                    { text: "Caerse está permitido, levantarse es obligatorio. Hoy tienes una nueva oportunidad para conquistar el mundo.", mantra: "Me levanto con gloria." },
+                    { text: "No pidas cargas más ligeras, pide una espalda más fuerte. El universo te entrena para grandes destinos.", mantra: "Acepto el desafío." },
+                    { text: "El fuego interior que posees quema más fuerte que el fuego que te rodea.", mantra: "Mi llama es eterna." },
+                    { text: "Lo que hoy te duele, mañana será la base de tu imperio. Construye con tus escombros.", mantra: "Construyo mi futuro." },
+                    { text: "Un guerrero no se define por ganar siempre, sino por no rendirse nunca.", mantra: "Persisto y venzo." },
+                    { text: "El miedo es solo una reacción, el coraje es una decisión. Hoy decide ser valiente.", mantra: "Elijo el coraje." },
+
+                    // 11-20: Superación y Voluntad
+                    { text: "Tírame a los lobos y volveré liderando la manada.", mantra: "Nací para liderar." },
+                    { text: "Tu mente se rendirá mil veces antes que tu cuerpo. No escuches a tu mente, escucha a tu propósito.", mantra: "Mi propósito me guía." },
+                    { text: "Las raíces más fuertes crecen en los vientos más feroces.", mantra: "Estoy arraigado." },
+                    { text: "No eres lo que te pasó, eres quien eliges ser ahora mismo.", mantra: "Soy dueño de mi destino." },
+                    { text: "La disciplina es el puente entre tus metas y tus logros. Crúzalo cada día.", mantra: "La disciplina es mi libertad." },
+                    { text: "No esperes a que sea fácil, prepárate para que valga la pena.", mantra: "Valgo el esfuerzo." },
+                    { text: "Si el plan no funciona, cambia el plan, pero nunca cambies la meta.", mantra: "Mi visión es clara." },
+                    { text: "Eres el arquitecto de tu propia realidad; usa ladrillos de determinación.", mantra: "Diseño mi vida." },
+                    { text: "La duda mata más sueños que el fracaso. Atrévete a creer en ti.", mantra: "Creo en mi poder." },
+                    { text: "Tu potencial es infinito, tus límites son imaginarios.", mantra: "Soy ilimitado." },
+
+                    // 21-30: Carácter y Honor
+                    { text: "El respeto no se exige, se gana con acciones y fortaleza de carácter.", mantra: "Actúo con honor." },
+                    { text: "Sé la persona que necesitabas cuando eras más joven.", mantra: "Soy mi propio héroe." },
+                    { text: "La calma en medio del caos es la máxima señal de fuerza.", mantra: "Domino mi mente." },
+                    { text: "No compitas con nadie más que con tu versión de ayer.", mantra: "Me supero a diario." },
+                    { text: "El éxito es la suma de pequeños esfuerzos repetidos día tras día.", mantra: "La constancia es clave." },
+                    { text: "Tu actitud determina tu altitud. Mantén la cabeza alta.", mantra: "Vuelo alto." },
+                    { text: "No hay atajos para llegar a lugares que valgan la pena.", mantra: "Disfruto el camino." },
+                    { text: "El dolor es temporal, la gloria de no haberte rendido es para siempre.", mantra: "Mi legado es eterno." },
+                    { text: "Convierte tus muros en escalones.", mantra: "Todo me eleva." },
+                    { text: "La verdadera fuerza es ser suave por fuera pero de acero por dentro.", mantra: "Soy equilibrio." },
+
+                    // 31-40: Fuego y Pasión
+                    { text: "Enciende tu vida con pasión y deja que el mundo vea tu fuego.", mantra: "Ardo con propósito." },
+                    { text: "No apagues tu luz para que otros se sientan cómodos. Brilla con intensidad.", mantra: "Brillo sin disculpas." },
+                    { text: "La energía que emites es la que atraes. Vibra alto y fuerte.", mantra: "Soy energía pura." },
+                    { text: "Eres un volcán en potencia; no temas a tu propia explosión de talento.", mantra: "Libero mi poder." },
+                    { text: "Quema las naves si es necesario, pero no retrocedas.", mantra: "Solo miro adelante." },
+                    { text: "Tu corazón late con la fuerza de mil tambores de guerra.", mantra: "Mi corazón es valiente." },
+                    { text: "Deja huella donde pises, que la tierra sepa que estuviste aquí.", mantra: "Marco la diferencia." },
+                    { text: "La pasión es el combustible de lo imposible.", mantra: "Hago posible lo imposible." },
+                    { text: "No busques refugio, conviértete en el refugio.", mantra: "Soy seguridad." },
+                    { text: "El hierro se afila con hierro; rodéate de quienes te hagan mejor.", mantra: "Busco la excelencia." },
+
+                    // 41-50: Persistencia
+                    { text: "Un río corta la roca no por su fuerza, sino por su persistencia.", mantra: "Soy constante." },
+                    { text: "Cada 'no' que recibes te acerca más a un 'sí' definitivo.", mantra: "Persigo el éxito." },
+                    { text: "Si te cansas, aprende a descansar, no a renunciar.", mantra: "Recargo mi energía." },
+                    { text: "El fracaso es solo un condimento que le da sabor al éxito.", mantra: "Aprendo de todo." },
+                    { text: "No cuentes los días, haz que los días cuenten.", mantra: "Vivo el presente." },
+                    { text: "La paciencia no es esperar, es mantener una buena actitud mientras esperas.", mantra: "Tengo paciencia activa." },
+                    { text: "Sigue sembrando, incluso si no ves la cosecha inmediata.", mantra: "Confío en el proceso." },
+                    { text: "Tu velocidad no importa, adelante es adelante.", mantra: "Avanzo siempre." },
+                    { text: "Los grandes imperios no se construyeron en un día, y tú eres un imperio.", mantra: "Soy una obra maestra." },
+                    { text: "Resiste cinco minutos más. El milagro ocurre justo después de querer rendirse.", mantra: "Aguanto un poco más." },
+
+                    // 51-60: Mentalidad de Acero
+                    { text: "Domina tus pensamientos o tus pensamientos te dominarán a ti.", mantra: "Soy el amo de mi mente." },
+                    { text: "La adversidad presenta al hombre consigo mismo.", mantra: "Me conozco en la lucha." },
+                    { text: "No soy lo que me ha pasado, soy lo que decido ser.", mantra: "Tengo el control." },
+                    { text: "La fuerza no viene de la capacidad corporal, sino de una voluntad indomable.", mantra: "Mi voluntad es ley." },
+                    { text: "Hazlo con miedo, pero hazlo.", mantra: "Actúo a pesar del miedo." },
+                    { text: "El único límite real es el que te pones tú mismo.", mantra: "Rompo mis barreras." },
+                    { text: "Visualiza tu victoria y ve por ella.", mantra: "Veo mi triunfo." },
+                    { text: "No negocies con la mediocridad.", mantra: "Exijo lo mejor." },
+                    { text: "Tu enfoque es tu arma más letal.", mantra: "Estoy enfocado." },
+                    { text: "La autoconfianza es el primer secreto del éxito.", mantra: "Confío en mí." },
+
+                    // 61-70: Renacimiento
+                    { text: "Como el ave Fénix, a veces hay que quemarse para renacer más fuerte.", mantra: "Renazco de las cenizas." },
+                    { text: "Cada amanecer es una prueba de que la oscuridad no dura para siempre.", mantra: "Soy luz." },
+                    { text: "Has sobrevivido al 100% de tus días malos. Vas ganando.", mantra: "Soy un sobreviviente." },
+                    { text: "Deja ir quien eras para convertirte en quien serás.", mantra: "Abrazo el cambio." },
+                    { text: "La oruga no sabe que volará, pero confía. Tú también volarás.", mantra: "Estoy evolucionando." },
+                    { text: "Tus heridas son grietas por donde entra la luz.", mantra: "Sano y crezco." },
+                    { text: "Reinvéntate cuantas veces sea necesario.", mantra: "Soy versátil." },
+                    { text: "El pasado es un lugar de referencia, no de residencia.", mantra: "Vivo en el ahora." },
+                    { text: "Perdónate por el pasado y prepárate para el futuro.", mantra: "Estoy en paz." },
+                    { text: "La vida te rompe para que puedas reconstruirte mejor.", mantra: "Me reconstruyo." },
+
+                    // 71-80: Acción y Poder
+                    { text: "Las palabras inspiran, pero solo la acción crea cambios.", mantra: "Soy acción." },
+                    { text: "El momento perfecto no existe, toma el momento y hazlo perfecto.", mantra: "Creo mi oportunidad." },
+                    { text: "No digas 'no puedo', di '¿cómo puedo hacerlo?'.", mantra: "Busco soluciones." },
+                    { text: "Sé el tiburón del océano, no esperes a que te alimenten.", mantra: "Salgo a cazar metas." },
+                    { text: "Tu éxito será tu mejor venganza y tu mayor ruido.", mantra: "Triunfo en silencio." },
+                    { text: "Levántate, suspira, sonríe y sigue adelante.", mantra: "Soy imparable." },
+                    { text: "Eres el autor de tu libro, no dejes que nadie más sostenga el lápiz.", mantra: "Escribo mi historia." },
+                    { text: "La suerte favorece a los valientes.", mantra: "La fortuna me sigue." },
+                    { text: "Haz que tu presencia se note y tu ausencia se sienta.", mantra: "Soy valioso." },
+                    { text: "Desafía lo ordinario para vivir lo extraordinario.", mantra: "Soy extraordinario." },
+
+                    // 81-90: Sabiduría Guerrera
+                    { text: "El guerrero sabio evita la batalla, pero si lucha, vence.", mantra: "Elijo mis batallas." },
+                    { text: "La ira te hace pequeño, el perdón te obliga a crecer.", mantra: "Soy magnánimo." },
+                    { text: "No grites tu fuerza, demuéstrala.", mantra: "Soy fuerte en silencio." },
+                    { text: "A veces la mayor valentía es pedir ayuda.", mantra: "Soy humano y fuerte." },
+                    { text: "La humildad es la base de toda grandeza real.", mantra: "Soy humilde y grande." },
+                    { text: "Conócete a ti mismo y ganarás todas las guerras.", mantra: "Me conozco." },
+                    { text: "La verdadera libertad es no depender de la aprobación de nadie.", mantra: "Soy libre." },
+                    { text: "Sé firme en tus metas pero flexible en tus métodos.", mantra: "Me adapto." },
+                    { text: "El silencio también es una respuesta poderosa.", mantra: "Mi silencio habla." },
+                    { text: "No busques ser mejor que otros, busca ser mejor que ayer.", mantra: "Mi competencia soy yo." },
+
+                    // 91-100: Final Épico
+                    { text: "Estás hecho de polvo de estrellas y fuerza bruta.", mantra: "Soy cósmico." },
+                    { text: "Ningún mar en calma hizo experto a un marinero.", mantra: "Amo la tormenta." },
+                    { text: "Tu espíritu es indomable, recuérdalo siempre.", mantra: "Nadie me doma." },
+                    { text: "Hoy declaro que soy suficiente, soy capaz y soy fuerte.", mantra: "Soy suficiente." },
+                    { text: "El mundo necesita tu fuerza, no te escondas.", mantra: "Me muestro al mundo." },
+                    { text: "Camina con la certeza de que el universo te respalda.", mantra: "Estoy protegido." },
+                    { text: "Eres una fuerza de la naturaleza.", mantra: "Soy naturaleza viva." },
+                    { text: "Que tus hechos hablen tan fuerte que no se escuche lo que dices.", mantra: "Mis hechos hablan." },
+                    { text: "Al final del día, tú eres tu mayor proyecto.", mantra: "Invierto en mí." },
+                    { text: "Esto no es el final, es solo el comienzo de tu mejor versión.", mantra: "Apenas comienzo." }
+                ]
+            },
+            love: {
+                color: 0xff00cc, // Rosa
+                bgGradient: "radial-gradient(circle at center, #2e0b1d 0%, #000000 100%)",
+                icon: "💖",
+                quotes: [
+                    { text: "La relación más larga y profunda que tendrás en tu vida es contigo mismo. Trátate con la ternura con la que tratarías al amor de tu vida.", mantra: "Me amo incondicionalmente." },
+                    { text: "Eres suficiente. No necesitas hacer más, lograr más, ni ser más para merecer amor. Ya eres una obra de arte completa.", mantra: "Soy suficiente tal como soy." },
+                    { text: "Perdónate por las veces que olvidaste tu valor. Hoy es un buen día para empezar a ser tu mejor amigo.", mantra: "Me perdono y me libero." },
+                    { text: "Tu corazón es un jardín. Deja de regar las malas hierbas de la duda y empieza a plantar semillas de auto-respeto.", mantra: "Cultivo mi amor interior." },
+                    { text: "Brillas de una forma única. Nadie en este mundo tiene tu magia, tu risa, ni tu alma. Celébralo.", mantra: "Mi luz es única." }
+                ]
+            },
+            success: {
+                color: 0xffd700, // Dorado
+                bgGradient: "radial-gradient(circle at center, #2e260b 0%, #000000 100%)",
+                icon: "🏆",
+                quotes: [
+                    // 1-10: Visión y Mentalidad
+                    { text: "El éxito no es el destino, es la mentalidad con la que caminas. Camina hoy como si ya fueras dueño de tus sueños.", mantra: "Actúo desde la abundancia." },
+                    { text: "No bajes la meta, aumenta el esfuerzo. Tienes un potencial infinito esperando despertar.", mantra: "Soy ilimitado." },
+                    { text: "El miedo es solo una señal de que estás a punto de hacer algo valiente. Hazlo con miedo, pero hazlo.", mantra: "Soy valentía en acción." },
+                    { text: "Tu visión es una promesa de lo que vas a ser. Confía en el proceso, estás construyendo un imperio.", mantra: "Confío en mi visión." },
+                    { text: "La diferencia entre quien eres y quien quieres ser, es lo que haces hoy. Haz que este día cuente.", mantra: "Hoy construyo mi futuro." },
+                    { text: "Si tus sueños no te asustan, es porque son demasiado pequeños. Atrévete a soñar en gigante.", mantra: "Sueño sin límites." },
+                    { text: "El éxito se crea dos veces: primero en la mente y luego en la realidad.", mantra: "Visualizo y materializo." },
+                    { text: "No persigas el dinero, persigue la excelencia y el dinero te perseguirá a ti.", mantra: "Busco la excelencia." },
+                    { text: "Eres el CEO de tu propia vida. Contrata hábitos ganadores y despide a las excusas.", mantra: "Soy el jefe de mi vida." },
+                    { text: "La suerte es lo que sucede cuando la preparación se encuentra con la oportunidad.", mantra: "Estoy siempre preparado." },
+
+                    // 11-20: Acción y Ejecución
+                    { text: "Las ideas no valen nada sin ejecución. Hoy es día de convertir planes en resultados.", mantra: "Soy pura ejecución." },
+                    { text: "No esperes el momento perfecto, toma el momento y hazlo perfecto.", mantra: "Creo mis oportunidades." },
+                    { text: "El ascensor al éxito está fuera de servicio. Tienes que usar las escaleras, paso a paso.", mantra: "Subo con constancia." },
+                    { text: "Trabaja en silencio y deja que tu éxito haga todo el ruido.", mantra: "Mis logros hablan." },
+                    { text: "La distancia entre el querer y el poder se acorta con el entrenamiento.", mantra: "Entreno para ganar." },
+                    { text: "No te detengas cuando estés cansado, detente cuando hayas terminado.", mantra: "Termino lo que empiezo." },
+                    { text: "Pequeños progresos diarios suman grandes resultados con el tiempo.", mantra: "Avanzo cada día." },
+                    { text: "La acción cura el miedo. Si dudas, da el primer paso.", mantra: "Actúo ahora." },
+                    { text: "Sé tan bueno que no puedan ignorarte.", mantra: "Soy indispensable." },
+                    { text: "El éxito ama la velocidad. Decide rápido, actúa rápido, corrige rápido.", mantra: "Soy ágil y veloz." },
+
+                    // 21-30: Liderazgo e Influencia
+                    { text: "Un líder es aquel que conoce el camino, recorre el camino y muestra el camino.", mantra: "Lidero con el ejemplo." },
+                    { text: "No busques seguidores, busca crear otros líderes.", mantra: "Empodero a otros." },
+                    { text: "Tu red de contactos es tu red de riqueza. Rodéate de gigantes.", mantra: "Me rodeo de grandeza." },
+                    { text: "La verdadera influencia no es control, es inspiración.", mantra: "Inspiro a mi entorno." },
+                    { text: "Asume la responsabilidad extrema de todo en tu vida. Eso te da el poder de cambiarlo.", mantra: "Soy responsable." },
+                    { text: "El respeto se gana en el terreno de juego, no en la grada.", mantra: "Juego para ganar." },
+                    { text: "Eleva tus estándares y el universo se encontrará contigo ahí arriba.", mantra: "Merezco lo mejor." },
+                    { text: "Sé el tipo de persona con la que te gustaría hacer negocios.", mantra: "Soy íntegro." },
+                    { text: "Aporta valor masivo y recibirás recompensas masivas.", mantra: "Doy valor al mundo." },
+                    { text: "La calidad de tus preguntas determina la calidad de tu vida.", mantra: "Busco respuestas sabias." },
+
+                    // 31-40: Resiliencia y Superación
+                    { text: "El fracaso es solo la matrícula que pagas para llegar al éxito.", mantra: "Aprendo de mis errores." },
+                    { text: "Los ganadores no son los que nunca fallan, son los que nunca se rinden.", mantra: "Persisto siempre." },
+                    { text: "Convierte tus obstáculos en escalones hacia la cima.", mantra: "Todo me eleva." },
+                    { text: "Si cierran la puerta, entra por la ventana. Si no, construye una puerta.", mantra: "Encuentro el camino." },
+                    { text: "La presión es un privilegio; significa que estás en el juego grande.", mantra: "Amo la presión." },
+                    { text: "Cada 'no' me acerca más al 'sí' que cambiará mi vida.", mantra: "Sigo intentando." },
+                    { text: "No es lo que te pasa, es cómo reaccionas lo que define tu éxito.", mantra: "Elijo mi actitud." },
+                    { text: "La cima es solitaria solo si no ayudas a nadie a subir contigo.", mantra: "Subo acompañado." },
+                    { text: "Las tormentas hacen que los árboles echen raíces más profundas.", mantra: "Me fortalezco." },
+                    { text: "Tu pasado no define tu futuro, tus acciones presentes sí.", mantra: "Creo mi destino." },
+
+                    // 41-50: Abundancia y Riqueza
+                    { text: "La riqueza es un estado mental antes de ser un estado de cuenta.", mantra: "Soy mente millonaria." },
+                    { text: "Hay suficiente éxito para todos. No compitas, crea.", mantra: "Soy creativo." },
+                    { text: "Agradece lo que tienes mientras persigues todo lo que deseas.", mantra: "Soy gratitud." },
+                    { text: "El dinero es una herramienta para la libertad y el impacto.", mantra: "El dinero fluye a mí." },
+                    { text: "Invierte en ti mismo; es la inversión que paga el mejor interés.", mantra: "Soy mi mejor activo." },
+                    { text: "La escasez está en la mente; el mundo está lleno de oportunidades.", mantra: "Veo oportunidades." },
+                    { text: "Merezco la abundancia en todas las áreas de mi vida.", mantra: "Acepto la riqueza." },
+                    { text: "No trabajes solo por dinero, haz que el dinero trabaje para ti.", mantra: "Soy inteligente." },
+                    { text: "La generosidad es la llave que abre las puertas de la abundancia.", mantra: "Doy y recibo." },
+                    { text: "El éxito deja huellas; encuéntralas y síguelas.", mantra: "Aprendo de los mejores." },
+
+                    // 51-60: Disciplina y Hábitos
+                    { text: "La motivación te pone en marcha, el hábito te mantiene avanzando.", mantra: "Soy constante." },
+                    { text: "Haz hoy lo que otros no quieren, para vivir mañana como otros no pueden.", mantra: "Pago el precio." },
+                    { text: "La disciplina es elegir entre lo que quieres ahora y lo que quieres más.", mantra: "Elijo mi meta mayor." },
+                    { text: "Tus hábitos diarios están construyendo o destruyendo tu imperio.", mantra: "Cuido mis hábitos." },
+                    { text: "El éxito es la suma de pequeños esfuerzos repetidos día tras día.", mantra: "Soy consistente." },
+                    { text: "Domina tu mañana y dominarás tu día.", mantra: "Gano la mañana." },
+                    { text: "No negocies contigo mismo cuando suena la alarma. Levántate y conquista.", mantra: "Sin excusas." },
+                    { text: "El enfoque es decir 'no' a las buenas ideas para ir por las grandes ideas.", mantra: "Tengo enfoque láser." },
+                    { text: "Cuida tu tiempo como cuidas tu dinero. Es tu recurso más valioso.", mantra: "Valoro mi tiempo." },
+                    { text: "La excelencia no es un acto, es un hábito.", mantra: "Soy excelente siempre." },
+
+                    // 61-70: Ambición y Crecimiento
+                    { text: "No pidas menos problemas, pide más habilidades.", mantra: "Me capacito." },
+                    { text: "Si eres la persona más inteligente de la habitación, estás en la habitación equivocada.", mantra: "Busco aprender." },
+                    { text: "El confort es el enemigo del progreso.", mantra: "Salgo de mi zona." },
+                    { text: "Apunta a la luna; incluso si fallas, aterrizarás entre las estrellas.", mantra: "Pienso en grande." },
+                    { text: "Tu crecimiento comienza donde termina tu zona de confort.", mantra: "Acepto el reto." },
+                    { text: "No permitas que mentes pequeñas te convenzan de que tus sueños son demasiado grandes.", mantra: "Protejo mis sueños." },
+                    { text: "El conocimiento es poder, pero solo si se aplica.", mantra: "Aplico lo que sé." },
+                    { text: "Mantente hambriento, mantente alocado.", mantra: "Tengo hambre de éxito." },
+                    { text: "La vida premia a los que se atreven a pedir más.", mantra: "Pido lo mejor." },
+                    { text: "No solo sobrevivas, prospera.", mantra: "Nací para prosperar." },
+
+                    // 71-80: Legado y Propósito
+                    { text: "Trabaja hasta que no tengas que presentarte a ti mismo.", mantra: "Mi nombre es marca." },
+                    { text: "Tu legado es cada vida que tocas.", mantra: "Dejo huella positiva." },
+                    { text: "El éxito sin plenitud es el fracaso definitivo.", mantra: "Busco plenitud." },
+                    { text: "No cuentes los días, haz que los días cuenten.", mantra: "Vivo con propósito." },
+                    { text: "Asegúrate de que tu biografía sea una lectura interesante.", mantra: "Vivo una gran historia." },
+                    { text: "Construye algo que sobreviva a tu tiempo en la tierra.", mantra: "Construyo legado." },
+                    { text: "El propósito es el motor, el éxito es el combustible.", mantra: "Mi misión me guía." },
+                    { text: "Sé el cambio que quieres ver en el mercado.", mantra: "Soy innovador." },
+                    { text: "Vive de tal manera que si alguien hablara mal de ti, nadie le creería.", mantra: "Mi reputación es oro." },
+                    { text: "Hazlo con pasión o no lo hagas en absoluto.", mantra: "Pongo el corazón." },
+
+                    // 81-90: Confianza Inquebrantable
+                    { text: "Cree en ti mismo con tanta fuerza que el mundo no tenga más remedio que creer también.", mantra: "Creo en mí." },
+                    { text: "La duda mata más sueños que el fracaso jamás matará.", mantra: "Elimino la duda." },
+                    { text: "Tú eres tu única competencia real. Gánale a tu versión de ayer.", mantra: "Me supero." },
+                    { text: "Camina con la certeza de un rey, y el mundo te abrirá paso.", mantra: "Tengo postura de ganador." },
+                    { text: "No necesitas permiso para ser grandioso.", mantra: "Me autorizo a brillar." },
+                    { text: "Tu autoconfianza es tu mejor traje.", mantra: "Visto confianza." },
+                    { text: "Naciste original, no mueras como una copia.", mantra: "Soy auténtico." },
+                    { text: "El éxito es 99% actitud y 1% aptitud.", mantra: "Tengo actitud ganadora." },
+                    { text: "Eres capaz de cosas asombrosas.", mantra: "Soy capaz." },
+                    { text: "Tu superpoder es ser tú mismo.", mantra: "Soy único." },
+
+                    // 91-100: Cierre Épico
+                    { text: "El mundo está en tus manos, solo tienes que cerrarlas y agarrarlo.", mantra: "Tomo el control." },
+                    { text: "Hoy es el primer día del resto de tu vida exitosa.", mantra: "Comienzo ahora." },
+                    { text: "No pares hasta que te sientas orgulloso.", mantra: "Voy hasta el final." },
+                    { text: "El éxito es un viaje, no un destino. Disfruta el paisaje.", mantra: "Amo el camino." },
+                    { text: "Eres el arquitecto de tu propio destino.", mantra: "Diseño mi éxito." },
+                    { text: "Que tus metas sean tan grandes que te despierten antes que la alarma.", mantra: "Mis metas me inspiran." },
+                    { text: "Todo lo que quieres está al otro lado del miedo.", mantra: "Cruzo el miedo." },
+                    { text: "Hazlo hoy. Tu 'yo' del futuro te lo agradecerá.", mantra: "Invierto en mi futuro." },
+                    { text: "Naciste para brillar, no para estar en la sombra.", mantra: "Brillo intensamente." },
+                    { text: "La victoria está reservada para aquellos que están dispuestos a pagar su precio.", mantra: "La victoria es mía." }
+                ]
+            },
+           calm: {
+            color: 0x00ccff, // Azul Cyan
+            bgGradient: "radial-gradient(circle at center, #0b1a2e 0%, #000000 100%)",
+            icon: "🌊",
+            quotes: [
+                // 1-10: Respiración y Presencia
+                { text: "Respira. No necesitas tener todas las respuestas hoy. A veces, la paz llega cuando dejas de intentar controlarlo todo.", mantra: "Suelto y confío." },
+                { text: "Este momento es todo lo que existe. El pasado ya se fue, el futuro no ha llegado. Aquí y ahora, estás a salvo.", mantra: "Estoy presente." },
+                { text: "Imagina tu mente como un cielo azul; los pensamientos son solo nubes que pasan. Tú eres el cielo, vasto y en paz.", mantra: "Soy paz infinita." },
+                { text: "Todo pasa. Esta preocupación también pasará. Lo que es para ti, te encontrará en calma, no en caos.", mantra: "Todo está bien." },
+                { text: "Date permiso para descansar. No eres una máquina, eres un ser humano que necesita recargar su luz.", mantra: "Descanso para brillar." },
+                { text: "Inhala calma, exhala tensión. Tu respiración es el ancla que te mantiene firme en la tormenta.", mantra: "Respiro tranquilidad." },
+                { text: "No hay prisa. La naturaleza no se apresura, y sin embargo, todo se logra.", mantra: "Voy a mi ritmo." },
+                { text: "Donde pones tu atención, pones tu energía. Elige enfocarte en la calma.", mantra: "Elijo la serenidad." },
+                { text: "Hoy elijo la paz sobre la preocupación y la fe sobre el miedo.", mantra: "Elijo la paz." },
+                { text: "El silencio no es vacío, es una respuesta llena de sabiduría.", mantra: "Escucho el silencio." },
+
+                // 11-20: Soltar el Control
+                { text: "No puedes detener las olas, pero puedes aprender a surfear. Fluye con lo que viene.", mantra: "Fluyo con la vida." },
+                { text: "A veces, dejar ir es el mayor acto de poder. Suelta lo que te pesa.", mantra: "Suelto y libero." },
+                { text: "Lo que está destinado para ti no pasará de largo. Relájate y confía en el tiempo.", mantra: "Confío en el proceso." },
+                { text: "El control es una ilusión. La verdadera seguridad viene de aceptar la incertidumbre.", mantra: "Abrazo lo incierto." },
+                { text: "No tienes que resolverlo todo ahora. Un paso a la vez es suficiente.", mantra: "Un paso a la vez." },
+                { text: "Deja que las cosas sean. Forzar solo rompe; fluir construye.", mantra: "Dejo ser." },
+                { text: "Tu paz interior es tu mayor activo. No dejes que el mundo exterior la negocie.", mantra: "Protejo mi paz." },
+                { text: "Perdónate por no saber lo que no sabías antes. Estás aprendiendo.", mantra: "Me perdono." },
+                { text: "Aligerar la carga es el primer paso para volar.", mantra: "Viajo ligero." },
+                { text: "No empujes el río, fluye solo.", mantra: "Confío en la corriente." },
+
+                // 21-30: Naturaleza y Metáforas
+                { text: "Sé como el agua: suave suficiente para ofrecer vida, fuerte suficiente para ahuecar la piedra.", mantra: "Soy agua." },
+                { text: "Después de la tormenta siempre llega la calma. El sol volverá a salir.", mantra: "La luz regresa." },
+                { text: "Mantén tus raíces profundas en la tierra y ninguna ráfaga podrá derribarte.", mantra: "Estoy arraigado." },
+                { text: "Mira las estrellas; a ellas no les preocupa brillar, simplemente lo hacen.", mantra: "Brillo sin esfuerzo." },
+                { text: "La montaña no se inclina ante el viento, simplemente permanece. Sé la montaña.", mantra: "Soy estable." },
+                { text: "Tu mente es un jardín. Planta pensamientos de paz y cosecharás serenidad.", mantra: "Cultivo mi mente." },
+                { text: "El océano es vasto y profundo, como tu capacidad para amar y sanar.", mantra: "Soy profundo." },
+                { text: "Como el árbol en invierno, a veces necesitas soltar tus hojas para sobrevivir y renacer.", mantra: "Me renuevo." },
+                { text: "El amanecer nos recuerda que siempre hay un nuevo comienzo.", mantra: "Empiezo de nuevo." },
+                { text: "Fluye como el río hacia el mar de tus sueños.", mantra: "Voy hacia mi destino." },
+
+                // 31-40: Descanso y Autocuidado
+                { text: "Descansar no es perder el tiempo, es recargar el alma.", mantra: "Merezco descanso." },
+                { text: "Trátate con la misma amabilidad con la que tratarías a tu mejor amigo.", mantra: "Soy amable conmigo." },
+                { text: "Tu valor no se mide por tu productividad. Eres valioso solo por ser.", mantra: "Soy valioso." },
+                { text: "Desconectar para reconectar contigo mismo es necesario.", mantra: "Me reconecto." },
+                { text: "Escucha a tu cuerpo cuando susurra, para no tener que escucharlo cuando grite.", mantra: "Escucho mi cuerpo." },
+                { text: "La paz comienza cuando terminan las expectativas sobre ti mismo.", mantra: "Me acepto hoy." },
+                { text: "Date tiempo. Las flores no se abren con fuerza, se abren con luz y paciencia.", mantra: "Tengo paciencia." },
+                { text: "Hoy, mi única tarea urgente es cuidar de mi energía.", mantra: "Cuido mi energía." },
+                { text: "Dormir bien es una carta de amor a tu cuerpo.", mantra: "Amo mi bienestar." },
+                { text: "No lleves el peso del mundo en tus hombros; el mundo puede girar sin ti un rato.", mantra: "Suelto el mundo." },
+
+                // 41-50: Claridad Mental
+                { text: "En la quietud encontrarás las respuestas que el ruido no te deja oír.", mantra: "Busco la quietud." },
+                { text: "Limpia tu mente del 'no puedo' y llénala de 'es posible'.", mantra: "Todo es posible." },
+                { text: "La claridad llega cuando el agua fangosa se asienta.", mantra: "Espero con calma." },
+                { text: "Simplifica. Menos ruido, más vida.", mantra: "Vivo simple." },
+                { text: "No creas todo lo que piensas. Tú eres el observador, no el pensamiento.", mantra: "Observo sin juzgar." },
+                { text: "La preocupación es usar tu imaginación para crear cosas que no quieres.", mantra: "Imagino lo bueno." },
+                { text: "Una mente en calma es la mejor arma contra los desafíos.", mantra: "Mi mente es aliada." },
+                { text: "Cierra los ojos y encuentra ese lugar dentro de ti donde nada puede tocarte.", mantra: "Voy a mi centro." },
+                { text: "El caos está afuera, la calma es una elección interna.", mantra: "Elijo la calma." },
+                { text: "Despeja el desorden mental y verás el camino.", mantra: "Veo claro." },
+
+                // 51-60: Confianza en la Vida
+                { text: "Todo sucede a su debido tiempo. No llegas tarde a tu propia vida.", mantra: "Estoy a tiempo." },
+                { text: "Lo que buscas también te está buscando a ti.", mantra: "Atraigo lo bueno." },
+                { text: "La vida no te está pasando a ti, está pasando para ti.", mantra: "La vida me apoya." },
+                { text: "Confía en que el universo está conspirando a tu favor, incluso si no lo ves.", mantra: "El universo me cuida." },
+                { text: "Detrás de cada retraso hay una bendición disfrazada.", mantra: "Todo es perfecto." },
+                { text: "Acepta lo que es, deja ir lo que fue, ten fe en lo que será.", mantra: "Tengo fe." },
+                { text: "No tienes que empujar la puerta, tienes la llave.", mantra: "Soy la llave." },
+                { text: "Las coincidencias son la forma en que el universo permanece anónimo.", mantra: "Veo señales." },
+                { text: "Estás exactamente donde necesitas estar para crecer.", mantra: "Estoy en mi lugar." },
+                { text: "La fe es dar el primer paso incluso cuando no ves toda la escalera.", mantra: "Doy el paso." },
+
+                // 61-70: Gratitud y Perspectiva
+                { text: "La gratitud convierte lo que tenemos en suficiente.", mantra: "Soy agradecido." },
+                { text: "Encuentra alegría en lo ordinario y tu vida será extraordinaria.", mantra: "Veo la magia." },
+                { text: "No necesitas más para ser feliz, necesitas apreciar más lo que ya eres.", mantra: "Soy suficiente." },
+                { text: "Cada día trae un regalo escondido, búscalo.", mantra: "Busco el regalo." },
+                { text: "La felicidad es un estado de gratitud constante.", mantra: "Vivo en gratitud." },
+                { text: "Cambia tu expectativa por apreciación y el mundo cambiará instantáneamente.", mantra: "Aprecio todo." },
+                { text: "Lo simple es hermoso.", mantra: "Amo lo simple." },
+                { text: "Hoy agradezco por el aire en mis pulmones y la vida en mi cuerpo.", mantra: "Gracias por hoy." },
+                { text: "Mira a tu alrededor, hay belleza en todas partes si decides verla.", mantra: "Veo belleza." },
+                { text: "La abundancia comienza con el agradecimiento.", mantra: "Soy abundante." },
+
+                // 71-80: Resiliencia Suave
+                { text: "La suavidad no es debilidad, es la forma más pura de fortaleza.", mantra: "Soy suave y fuerte." },
+                { text: "Sanar no es lineal. Ten paciencia con tus propios ciclos.", mantra: "Me tengo paciencia." },
+                { text: "Está bien no estar bien todo el tiempo. Abraza tu humanidad.", mantra: "Soy humano." },
+                { text: "Tus sentimientos son visitantes, déjalos venir y déjalos ir.", mantra: "Siento sin miedo." },
+                { text: "La verdadera victoria es mantener el corazón suave en un mundo duro.", mantra: "Mantengo mi corazón." },
+                { text: "No huyas de la tristeza, siéntela para que pueda transformarse.", mantra: "Transformo el dolor." },
+                { text: "Eres más fuerte de lo que crees, pero está bien ser vulnerable.", mantra: "Abrazo mi vulnerabilidad." },
+                { text: "Llorar es limpiar el alma. Deja que llueva.", mantra: "Limpio mi alma." },
+                { text: "La compasión por uno mismo es el mejor remedio.", mantra: "Soy compasivo." },
+                { text: "Vuelve a ti, una y otra vez. Tú eres tu hogar.", mantra: "Soy mi hogar." },
+
+                // 81-90: Equilibrio
+                { text: "El equilibrio no es algo que encuentras, es algo que creas.", mantra: "Creo equilibrio." },
+                { text: "Camina despacio, llegarás más lejos.", mantra: "Voy despacio." },
+                { text: "Ni muy rápido, ni muy lento. Encuentra tu propio ritmo.", mantra: "Sigo mi ritmo." },
+                { text: "Armonía en la mente, paz en el corazón.", mantra: "Vivo en armonía." },
+                { text: "Saber cuándo detenerse es tan importante como saber cuándo avanzar.", mantra: "Sé detenerme." },
+                { text: "Tu energía es sagrada, no la malgastes en lo que no te suma.", mantra: "Valoro mi energía." },
+                { text: "En el centro del huracán hay calma. Sé ese centro.", mantra: "Soy el centro." },
+                { text: "Equilibra el hacer con el ser.", mantra: "Simplemente soy." },
+                { text: "La moderación es la clave de la longevidad y la paz.", mantra: "Soy moderado." },
+                { text: "No sacrifiques tu paz por complacer a otros.", mantra: "Me elijo a mí." },
+
+                // 91-100: Cierre Sereno
+                { text: "Que tu corazón sea ligero como una pluma.", mantra: "Soy ligero." },
+                { text: "La paz es el camino a casa.", mantra: "Voy a casa." },
+                { text: "Cierra los ojos, respira profundo y recuerda quién eres.", mantra: "Recuerdo mi esencia." },
+                { text: "Todo está bien en mi mundo.", mantra: "Todo está bien." },
+                { text: "Soy un oasis de paz en medio del desierto.", mantra: "Soy un oasis." },
+                { text: "La calma es mi superpoder.", mantra: "Tengo el poder." },
+                { text: "Nado en un mar de posibilidades tranquilas.", mantra: "Nado en calma." },
+                { text: "Mi alma está serena, mi mente está clara.", mantra: "Estoy sereno." },
+                { text: "Suelto el día y me entrego al descanso.", mantra: "Me entrego." },
+                { text: "La paz contigo mismo es el éxito definitivo.", mantra: "Tengo éxito y paz." }
+            ]
+        }
+        };
+
+        let currentCategory = 'strength';
+
+        // --- LÓGICA UI ---
+        
+        function selectMood(category) {
+            currentCategory = category;
+            const data = quotesDB[category];
+
+            // 1. Animar salida del selector
+            const tl = gsap.timeline();
+            tl.to("#main-header", { y: -50, opacity: 0, duration: 0.5 });
+            tl.to("#mood-selector", { opacity: 0, scale: 0.9, duration: 0.5, display: "none" });
+
+            // 2. Preparar y mostrar Quote
+            generateNewQuote(false); // false para no animar entrada todavía
+            
+            tl.set("#quote-card", { display: "block" });
+            tl.fromTo("#quote-card", 
+                { opacity: 0, y: 50, scale: 0.95 },
+                { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power3.out" }
+            );
+
+            // 3. Cambiar Ambiente (Three.js & CSS)
+            changeAtmosphere(data.color, data.bgGradient);
+        }
+
+        function generateNewQuote(animate = true) {
+            const categoryData = quotesDB[currentCategory];
+            const randomQuote = categoryData.quotes[Math.floor(Math.random() * categoryData.quotes.length)];
+            
+            const titleEl = document.getElementById('quote-text');
+            const mantraEl = document.getElementById('quote-mantra');
+            const iconEl = document.getElementById('quote-icon');
+
+            if (animate) {
+                gsap.to([titleEl, mantraEl], { opacity: 0, y: -10, duration: 0.3, onComplete: () => {
+                    updateText();
+                    gsap.to([titleEl, mantraEl], { opacity: 1, y: 0, duration: 0.5 });
+                }});
+            } else {
+                updateText();
+            }
+
+            function updateText() {
+                titleEl.innerText = randomQuote.text;
+                mantraEl.innerText = randomQuote.mantra;
+                iconEl.innerText = categoryData.icon;
+            }
+        }
+
+        function reset() {
+            const tl = gsap.timeline();
+            
+            // Ocultar Quote
+            tl.to("#quote-card", { opacity: 0, y: 50, duration: 0.4, display: "none" });
+            
+            // Restaurar Header y Selector
+            tl.set("#main-header", { y: 0, opacity: 1 }); // reset position hiddenly first? No, animate it back
+            tl.set("#mood-selector", { display: "grid" });
+            
+            tl.fromTo("#main-header", { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5 });
+            tl.to("#mood-selector", { opacity: 1, scale: 1, duration: 0.5 }, "-=0.3");
+
+            // Reset ambiente a neutro (opcional, o dejar el último color)
+            changeAtmosphere(0xffffff, "radial-gradient(circle at center, #1a0b2e 0%, #000000 100%)");
+        }
+
+        function changeAtmosphere(hexColor, cssGradient) {
+            // Cambiar fondo CSS
+            document.getElementById('canvas-container').style.background = cssGradient;
+            
+            // Cambiar color de partículas Three.js
+            const targetColor = new THREE.Color(hexColor);
+            
+            // Animamos el color de cada partícula
+            // Para simplificar y rendimiento, cambiamos el color global del material o recreamos colores
+            // Vamos a interpolar hacia el nuevo color
+            
+            gsap.to(particlesMaterial.color, {
+                r: targetColor.r,
+                g: targetColor.g,
+                b: targetColor.b,
+                duration: 2
+            });
+
+            // Cambiar variables CSS para glow
+            document.documentElement.style.setProperty('--glow-color', `rgba(${targetColor.r*255}, ${targetColor.g*255}, ${targetColor.b*255}, 0.6)`);
+            
+            // Explosion effect
+            explodeParticles();
+        }
+
+
+        // --- THREE.JS BACKGROUND ---
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Texturas
+        function createTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; // Más calidad
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const cx = 32; const cy = 32;
+
+            if (type === 'glow') {
+                const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 30);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grad.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 64, 64);
+            }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const particleTexture = createTexture('glow');
+
+        // Partículas Estelares
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 1200; // Más partículas
+        
+        const posArray = new Float32Array(particlesCount * 3);
+        const randomArray = new Float32Array(particlesCount); // Para movimiento aleatorio individual
+        
+        for(let i = 0; i < particlesCount * 3; i+=3) {
+            posArray[i] = (Math.random() - 0.5) * 25;   // x expandido
+            posArray[i+1] = (Math.random() - 0.5) * 25; // y expandido
+            posArray[i+2] = (Math.random() - 0.5) * 25; // z
+            
+            randomArray[i/3] = Math.random();
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        particlesGeometry.setAttribute('aRandom', new THREE.BufferAttribute(randomArray, 1));
+        
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.15,
+            color: 0xffffff, // Empieza blanco
+            map: particleTexture,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        camera.position.z = 5;
+
+        // Mouse interaction
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
+            mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        function explodeParticles() {
+            // Efecto de "respiración" o expansión rápida
+            gsap.to(particlesMesh.scale, {
+                x: 1.5, y: 1.5, z: 1.5,
+                duration: 0.5,
+                yoyo: true,
+                repeat: 1,
+                ease: "sine.inOut"
+            });
+            
+            // Rotación rápida
+            gsap.to(particlesMesh.rotation, {
+                y: particlesMesh.rotation.y + 1,
+                duration: 2,
+                ease: "power2.out"
+            });
+        }
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Movimiento suave y constante
+            particlesMesh.rotation.y += 0.001;
+            particlesMesh.rotation.z += 0.0005;
+
+            // Ondulación suave de todo el campo
+            particlesMesh.position.y = Math.sin(elapsedTime * 0.5) * 0.2;
+
+            // Parallax mouse
+            gsap.to(particlesMesh.rotation, {
+                x: -mouseY * 0.1,
+                y: mouseX * 0.1 + (elapsedTime * 0.05), // Añadir rotación base
+                duration: 1
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Responsive
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>
