@@ -17,6 +17,7 @@
             -webkit-user-select: none;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             cursor: none; 
+            -webkit-tap-highlight-color: transparent; /* Eliminar flash azul en tap */
         }
 
         canvas {
@@ -124,97 +125,119 @@
 
     <script>
         /**
-         * AUDIO SYNTH (Arcade Style)
+         * AUDIO SYNTH (Arcade Style) - ROBUST VERSION
          */
         const AudioSys = {
             ctx: null,
             masterGain: null,
+            ready: false,
             
             init() {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AC();
-                this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.value = 0.3;
-                this.masterGain.connect(this.ctx.destination);
+                try {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!AC) return; // Navegador no soporta audio, seguimos en silencio
+                    
+                    this.ctx = new AC();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.value = 0.3;
+                    this.masterGain.connect(this.ctx.destination);
+                    this.ready = true;
+
+                    // Fix para Chrome Mobile: Resume si está suspendido
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                } catch (e) {
+                    console.warn("Audio init failed:", e);
+                    // No seteamos ready = true, el juego continuará sin audio
+                }
             },
 
             playShoot(pitch = 1) {
-                if (!this.ctx) return;
-                const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(880 * pitch, t);
-                osc.frequency.exponentialRampToValueAtTime(110, t + 0.1);
-                
-                gain.gain.setValueAtTime(0.1, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-                
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                osc.start();
-                osc.stop(t + 0.1);
+                if (!this.ready || !this.ctx) return;
+                try {
+                    const t = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(880 * pitch, t);
+                    osc.frequency.exponentialRampToValueAtTime(110, t + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start();
+                    osc.stop(t + 0.1);
+                } catch(e) {}
             },
 
             playExplosion() {
-                if (!this.ctx) return;
-                const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(100, t);
-                osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.3);
-                
-                gain.gain.setValueAtTime(0.2, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-                
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                osc.start();
-                osc.stop(t + 0.3);
+                if (!this.ready || !this.ctx) return;
+                try {
+                    const t = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(100, t);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start();
+                    osc.stop(t + 0.3);
+                } catch(e) {}
             },
 
             playPowerUp() {
-                if (!this.ctx) return;
-                const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, t);
-                osc.frequency.linearRampToValueAtTime(880, t + 0.1);
-                osc.frequency.linearRampToValueAtTime(1760, t + 0.3);
-                
-                gain.gain.setValueAtTime(0.2, t);
-                gain.gain.linearRampToValueAtTime(0, t + 0.3);
-                
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                osc.start();
-                osc.stop(t + 0.3);
+                if (!this.ready || !this.ctx) return;
+                try {
+                    const t = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, t);
+                    osc.frequency.linearRampToValueAtTime(880, t + 0.1);
+                    osc.frequency.linearRampToValueAtTime(1760, t + 0.3);
+                    
+                    gain.gain.setValueAtTime(0.2, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start();
+                    osc.stop(t + 0.3);
+                } catch(e) {}
             },
 
             playCollect(type) {
-                if (!this.ctx) return;
-                const t = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                
-                osc.type = 'triangle';
-                const baseFreq = type === 'gold' ? 880 : 660;
-                
-                osc.frequency.setValueAtTime(baseFreq, t);
-                osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, t + 0.1);
-                
-                gain.gain.setValueAtTime(0.3, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
-                
-                osc.connect(gain);
-                gain.connect(this.masterGain);
-                osc.start();
-                osc.stop(t + 0.4);
+                if (!this.ready || !this.ctx) return;
+                try {
+                    const t = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'triangle';
+                    const baseFreq = type === 'gold' ? 880 : 660;
+                    
+                    osc.frequency.setValueAtTime(baseFreq, t);
+                    osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, t + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.3, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start();
+                    osc.stop(t + 0.4);
+                } catch(e) {}
             }
         };
 
@@ -254,8 +277,8 @@
                 this.x = width / 2;
                 this.y = height / 2;
                 this.angle = 0;
-                this.innerAngle = 0; // Rotación independiente del núcleo
-                this.size = 25; // Ligeramente más grande para visibilidad móvil
+                this.innerAngle = 0; 
+                this.size = 25; 
                 this.weaponLevel = 0;
                 this.xp = 0;
                 this.nextLevelXp = 50;
@@ -263,7 +286,7 @@
                 this.fireTimer = 0;
                 this.speedMultiplier = 1.0;
                 
-                // Sistema de Trail (Estela)
+                // Sistema de Trail
                 this.trail = []; 
                 this.maxTrail = 6;
             }
@@ -274,22 +297,20 @@
                 if(this.trail.length > this.maxTrail) this.trail.shift();
 
                 // Movimiento (Lerp)
-                // Si es táctil, el mouseX/Y ya viene con offset calculado en el eventListener
                 this.x += (mouseX - this.x) * 0.15;
                 this.y += (mouseY - this.y) * 0.15;
                 
                 // Rotaciones
                 this.angle += firing ? 0.2 : 0.05;
-                this.innerAngle -= 0.1; // Núcleo gira al revés
+                this.innerAngle -= 0.1; 
 
                 // Límites
                 this.x = Math.max(this.size, Math.min(width - this.size, this.x));
                 this.y = Math.max(this.size, Math.min(height - this.size, this.y));
 
-                // Emitir partículas de motor si se mueve rápido
+                // Emitir partículas de motor
                 if (Math.abs(mouseX - this.x) > 2 || Math.abs(mouseY - this.y) > 2) {
                      if(frames % 5 === 0) {
-                         // Partícula sale en dirección opuesta al movimiento (aprox)
                          particles.push(new Particle(this.x, this.y, this.color, 2)); 
                      }
                 }
@@ -337,7 +358,7 @@
             }
 
             draw() {
-                // Dibujar Estela (Ghost Trail)
+                // Dibujar Estela
                 for(let i=0; i<this.trail.length; i++) {
                     const t = this.trail[i];
                     const alpha = (i / this.trail.length) * 0.3;
@@ -358,11 +379,11 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 
-                // Rotación Externa (Cuerpo principal)
+                // Rotación Externa
                 ctx.save();
                 ctx.rotate(this.angle);
                 
-                // Triángulo Principal (Hueco)
+                // Triángulo Principal
                 ctx.beginPath();
                 ctx.moveTo(this.size, 0);
                 ctx.lineTo(-this.size/2, this.size/2);
@@ -375,24 +396,23 @@
                 ctx.shadowColor = this.color;
                 ctx.stroke();
                 
-                // Relleno semitransparente
+                // Relleno
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = 0.1;
                 ctx.fill();
                 ctx.globalAlpha = 1.0;
-                ctx.restore(); // Fin rotación externa
+                ctx.restore(); 
 
-                // Núcleo Giratorio (Interno)
+                // Núcleo Giratorio
                 ctx.save();
                 ctx.rotate(this.innerAngle);
                 ctx.beginPath();
-                // Forma de diamante/núcleo
                 ctx.rect(-8, -8, 16, 16);
                 ctx.fillStyle = '#fff';
                 ctx.fill();
                 ctx.restore();
 
-                // Escudo de XP (Anillo externo estático o pulsante)
+                // Escudo de XP
                 const xpRatio = this.xp / this.nextLevelXp;
                 ctx.beginPath();
                 ctx.arc(0, 0, this.size + 8, -Math.PI/2, -Math.PI/2 + (Math.PI*2 * xpRatio));
@@ -400,16 +420,6 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // Indicador de nivel de arma (puntos debajo de la nave)
-                /*
-                for(let i=0; i<=this.weaponLevel; i++) {
-                    ctx.beginPath();
-                    ctx.arc((i - this.weaponLevel/2) * 10, this.size + 15, 2, 0, Math.PI*2);
-                    ctx.fillStyle = this.color;
-                    ctx.fill();
-                }
-                */
-
                 ctx.restore();
             }
 
@@ -652,8 +662,7 @@
             floatingTexts.push({ text, x, y, color, life: 1.0 });
         }
 
-        // INPUT & MOBILE HANDLING
-        // Inicializamos fuera de pantalla
+        // INPUT & MOBILE HANDLING (ROBUST)
         const mouse = { x: -100, y: -100, active: false };
         let isTouch = false;
         
@@ -661,40 +670,48 @@
             resize();
             window.addEventListener('resize', resize);
             
-            const startHandler = () => {
+            // Handler unificado y seguro para iniciar
+            const startHandler = (e) => {
+                // Evitar doble disparo (mouse emulation)
+                if (e.type === 'touchstart') isTouch = true;
+                if (e.type === 'mousedown' && isTouch) return;
+
                 if (!gameActive) {
                     gameActive = true;
                     AudioSys.init();
+                    
                     overlay.style.opacity = 0;
+                    // Desactivar puntero inmediatamente para evitar clicks fantasmas
+                    overlay.style.pointerEvents = 'none'; 
                     setTimeout(() => overlay.style.display = 'none', 500);
+                    
                     player = new Player();
                     animate();
                 }
             };
             
+            // Listeners en el overlay
             overlay.addEventListener('mousedown', startHandler);
             overlay.addEventListener('touchstart', (e) => {
-                isTouch = true;
-                e.preventDefault();
-                startHandler();
+                e.preventDefault(); // Prevenir mouse emulation y scroll
+                startHandler(e);
             }, {passive: false});
 
-            // Mouse Events
+            // Input del Juego
             window.addEventListener('mousemove', e => {
                 if(!isTouch) {
                     mouse.x = e.clientX;
                     mouse.y = e.clientY;
                 }
             });
-            window.addEventListener('mousedown', () => mouse.active = true);
-            window.addEventListener('mouseup', () => mouse.active = false);
+            window.addEventListener('mousedown', () => { if(!isTouch) mouse.active = true; });
+            window.addEventListener('mouseup', () => { if(!isTouch) mouse.active = false; });
 
-            // Touch Events (Optimizados para móvil)
+            // Touch Input
             window.addEventListener('touchmove', e => {
-                e.preventDefault(); // Prevenir scroll
+                e.preventDefault(); 
                 isTouch = true;
                 mouse.x = e.touches[0].clientX;
-                // Offset Y para que el dedo no tape la nave
                 mouse.y = e.touches[0].clientY - 50; 
             }, {passive: false});
 
@@ -704,6 +721,11 @@
                 mouse.active = true;
                 mouse.x = e.touches[0].clientX;
                 mouse.y = e.touches[0].clientY - 50;
+                
+                // Intentar resumir audio si fue suspendido
+                if(AudioSys.ctx && AudioSys.ctx.state === 'suspended') {
+                    AudioSys.ctx.resume();
+                }
             }, {passive: false});
 
             window.addEventListener('touchend', (e) => {
@@ -716,7 +738,6 @@
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             if(player) {
-                // Mantener al jugador dentro si la pantalla se achica
                 player.x = Math.min(width - player.size, Math.max(player.size, player.x));
                 player.y = Math.min(height - player.size, Math.max(player.size, player.y));
             }
@@ -753,7 +774,6 @@
                 if (Math.random() < 0.0005) powerups.push(new PowerUp('gold'));
 
                 // Player Logic
-                // Si es el primer frame, centra el mouse al jugador para evitar salto
                 if(frames === 1) {
                     mouse.x = width/2;
                     mouse.y = height/2;
@@ -820,7 +840,7 @@
                     
                     ctx.fillStyle = ft.color;
                     ctx.font = "bold 16px Arial";
-                    ctx.textAlign = "center"; // Centrar texto
+                    ctx.textAlign = "center"; 
                     ctx.globalAlpha = Math.max(0, ft.life);
                     ctx.fillText(ft.text, ft.x, ft.y);
                     ctx.globalAlpha = 1;
