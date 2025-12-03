@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neuro-Genesis: Ascension</title>
+    <title>Neuro-Genesis: Prism War</title>
     <style>
         body, html {
             margin: 0;
@@ -13,12 +13,29 @@
             background-color: #050505;
             overflow: hidden;
             touch-action: none;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: none; /* Ocultar cursor nativo */
         }
 
         canvas {
             display: block;
         }
+
+        /* HUD Holográfico */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #4fd1c5;
+            pointer-events: none;
+            text-shadow: 0 0 10px #4fd1c5;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        #score { font-size: 24px; letter-spacing: 2px; }
+        #weapon-level { font-size: 14px; color: #faf089; margin-top: 5px; text-transform: uppercase; }
+        #stats { font-size: 12px; color: #fff; opacity: 0.7; margin-top: 5px; }
 
         #vignette {
             position: absolute;
@@ -27,9 +44,9 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
-            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
-            z-index: 10;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(255, 0, 80, 0.1);
+            z-index: 5;
         }
 
         #start-overlay {
@@ -42,610 +59,704 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             color: #fff;
             z-index: 20;
-            transition: opacity 1s;
+            transition: opacity 0.5s;
             cursor: pointer;
         }
 
         h1 {
-            font-weight: 100;
-            letter-spacing: 5px;
+            font-size: 40px;
             text-transform: uppercase;
-            font-size: 24px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            background: linear-gradient(to right, #4fd1c5, #fff, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 10px 0;
+            animation: glitch 1s infinite alternate;
         }
 
-        p {
-            font-size: 12px;
-            opacity: 0.7;
-            letter-spacing: 2px;
-        }
+        p { font-size: 14px; opacity: 0.7; letter-spacing: 1px; text-align: center; }
 
-        #ui-layer {
-            position: absolute;
-            top: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        /* Contenedor de estrellas y nivel */
-        #status-bar {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        #world-indicator {
-            color: rgba(255,255,255,0.5);
-            font-size: 10px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .star {
-            display: inline-block;
-            color: #333; /* Estrellas apagadas más oscuras */
-            font-size: 24px; /* Un poco más grandes */
-            margin: 0 8px;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-shadow: 0 0 2px rgba(0,0,0,1);
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 #ff0055, -2px 0 #4fd1c5; }
+            100% { text-shadow: -2px 0 #ff0055, 2px 0 #4fd1c5; }
         }
         
-        .star.active {
-            color: #fff;
-            text-shadow: 0 0 15px #fff, 0 0 30px currentColor;
-            transform: scale(1.4);
+        /* Efecto de daño */
+        .damage-flash {
+            animation: flashRed 0.2s ease-out;
         }
-
-        /* Animación para cuando se completa el nivel superior */
-        @keyframes world-shift {
-            0% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.1); filter: brightness(5); }
-            100% { transform: scale(1); filter: brightness(1); }
+        @keyframes flashRed {
+            0% { box-shadow: inset 0 0 100px red; }
+            100% { box-shadow: none; }
         }
-        
-        .shifting {
-            animation: world-shift 1s ease-out;
-        }
-
     </style>
 </head>
 <body>
 
     <div id="vignette"></div>
-    
-    <div id="ui-layer">
-        <div id="status-bar">
-            <div id="world-indicator">Mundo 1</div>
-            <div id="stars-container">
-                <!-- Las estrellas se generan dinámicamente -->
-            </div>
-        </div>
+    <div id="hud">
+        <div id="score">SCORE: 0</div>
+        <div id="weapon-level">SYSTEM: STANDBY</div>
+        <div id="stats">SPEED: 100%</div>
     </div>
 
     <div id="start-overlay">
-        <h1>Neuro-Genesis</h1>
-        <p>Toca para iniciar la Ascensión</p>
+        <h1>PRISM WAR</h1>
+        <p>ERES EL TRIÁNGULO GIRATORIO</p>
+        <p>MANTÉN PULSADO PARA DISPARAR</p>
+        <p>TOCA PARA INICIAR SISTEMAS</p>
     </div>
 
     <canvas id="canvas"></canvas>
 
     <script>
         /**
-         * SISTEMA DE AUDIO (Web Audio API)
+         * AUDIO SYNTH (Arcade Style)
          */
         const AudioSys = {
             ctx: null,
             masterGain: null,
-            scale: [196.00, 220.00, 246.94, 293.66, 329.63, 392.00, 440.00, 587.33], 
             
             init() {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AudioContext();
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
                 this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.value = 0.3; 
+                this.masterGain.gain.value = 0.3;
                 this.masterGain.connect(this.ctx.destination);
-                this.startDrone();
             },
 
-            startDrone() {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                const filter = this.ctx.createBiquadFilter();
-
-                osc.type = 'sine';
-                osc.frequency.value = 98.00; 
-                
-                filter.type = 'lowpass';
-                filter.frequency.value = 200;
-
-                setInterval(() => {
-                    if(this.ctx.state === 'running') {
-                        const time = this.ctx.currentTime;
-                        filter.frequency.setValueAtTime(200 + Math.sin(time) * 50, time);
-                    }
-                }, 100);
-
-                gain.gain.value = 0.5;
-                osc.connect(filter);
-                filter.connect(this.masterGain);
-                gain.connect(this.masterGain);
-                osc.start();
-            },
-
-            playChime() {
+            playShoot(pitch = 1) {
                 if (!this.ctx) return;
-                const note = this.scale[Math.floor(Math.random() * this.scale.length)];
+                const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = 'triangle'; 
-                osc.frequency.setValueAtTime(note, this.ctx.currentTime);
-                gain.gain.setValueAtTime(0, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.5);
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880 * pitch, t);
+                osc.frequency.exponentialRampToValueAtTime(110, t + 0.1);
+                
+                gain.gain.setValueAtTime(0.1, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                
                 osc.connect(gain);
                 gain.connect(this.masterGain);
                 osc.start();
-                osc.stop(this.ctx.currentTime + 2);
+                osc.stop(t + 0.1);
             },
 
-            // Sonido para ganar una estrella (Subnivel)
-            playSubLevelUp() {
+            playExplosion() {
                 if (!this.ctx) return;
+                const t = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(880, this.ctx.currentTime + 0.3); // Tono ascendente corto
-                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+                
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(100, t);
+                osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.3);
+                
+                gain.gain.setValueAtTime(0.2, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                
                 osc.connect(gain);
                 gain.connect(this.masterGain);
                 osc.start();
-                osc.stop(this.ctx.currentTime + 0.5);
+                osc.stop(t + 0.3);
             },
 
-            // Sonido épico para cambio de MUNDO
-            playWorldShift() {
+            playPowerUp() {
                 if (!this.ctx) return;
-                // Bajo profundo
-                const osc1 = this.ctx.createOscillator();
-                const gain1 = this.ctx.createGain();
-                osc1.frequency.setValueAtTime(100, this.ctx.currentTime);
-                osc1.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 2);
-                gain1.gain.setValueAtTime(0.8, this.ctx.currentTime);
-                gain1.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 3);
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
                 
-                // Brillo agudo
-                const osc2 = this.ctx.createOscillator();
-                const gain2 = this.ctx.createGain();
-                osc2.type = "square";
-                osc2.frequency.setValueAtTime(200, this.ctx.currentTime);
-                osc2.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.1);
-                gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                gain2.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, t);
+                osc.frequency.linearRampToValueAtTime(880, t + 0.1);
+                osc.frequency.linearRampToValueAtTime(1760, t + 0.3);
+                
+                gain.gain.setValueAtTime(0.2, t);
+                gain.gain.linearRampToValueAtTime(0, t + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(t + 0.3);
+            },
 
-                osc1.connect(gain1);
-                gain1.connect(this.masterGain);
-                osc1.start();
-
-                osc2.connect(gain2);
-                gain2.connect(this.masterGain);
-                osc2.start();
+            playCollect(type) {
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'triangle';
+                const baseFreq = type === 'gold' ? 880 : 660;
+                
+                osc.frequency.setValueAtTime(baseFreq, t);
+                osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, t + 0.1);
+                
+                gain.gain.setValueAtTime(0.3, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(t + 0.4);
             }
         };
 
         /**
-         * CONFIGURACIÓN & ESTADO
+         * GAME ENGINE
          */
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const weaponEl = document.getElementById('weapon-level');
+        const statsEl = document.getElementById('stats');
         const overlay = document.getElementById('start-overlay');
-        const starsContainer = document.getElementById('stars-container');
-        const worldIndicator = document.getElementById('world-indicator');
-        
-        let width, height;
-        let particles = [];
-        let ripples = [];
-        
-        // --- NUEVA LÓGICA DE NIVELES ---
-        let majorLevel = 1;      // El "Mundo" actual (1, 2, 3...)
-        let subLevel = 0;        // Estrellas conseguidas (0 a 5)
-        const maxSubLevels = 5;  // Cantidad de estrellas para avanzar de mundo
-        let coreEnergy = 0;      // Progreso para la siguiente estrella (0-100)
-        
-        let gameRunning = false;
-        const mouse = { x: -1000, y: -1000, active: false };
 
-        // Paletas de colores cíclicas
-        const colors = [
-            ['#4fd1c5', '#63b3ed', '#faf089'], // Mundo 1: Calma (Cyan/Gold)
-            ['#f6ad55', '#f6e05e', '#68d391'], // Mundo 2: Naturaleza (Orange/Green)
-            ['#b794f4', '#f687b3', '#63b3ed'], // Mundo 3: Sueños (Pink/Purple)
-            ['#76e4f7', '#d6bcfa', '#9f7aea'], // Mundo 4: Éter (Ice/Violet)
-            ['#ffffff', '#fc8181', '#f6ad55'], // Mundo 5: Fuego Sagrado (White/Red)
-            ['#00ff00', '#000000', '#333333']  // Mundo 6: Matrix (Green/Black - Ejemplo de loop)
+        let width, height;
+        let frames = 0;
+        let score = 0;
+        let gameActive = false;
+        
+        // Entidades
+        let player;
+        let projectiles = [];
+        let enemies = [];
+        let particles = [];
+        let powerups = [];
+        let shake = 0; // Screen shake
+
+        // Configuración de Armas
+        const WEAPONS = [
+            { name: "PULSO SIMPLE", rate: 15, color: '#4fd1c5', type: 0 },
+            { name: "FUEGO DOBLE", rate: 12, color: '#63b3ed', type: 1 },
+            { name: "TRIDENTE", rate: 10, color: '#faf089', type: 2 },
+            { name: "CAOS OMNI", rate: 6, color: '#ff0055', type: 3 }
         ];
 
-        // Generar UI de Estrellas (Subniveles)
-        for(let i=1; i<=maxSubLevels; i++) {
-            const s = document.createElement('span');
-            s.innerHTML = '★'; 
-            s.className = 'star';
-            s.id = `star-${i}`;
-            starsContainer.appendChild(s);
+        class Player {
+            constructor() {
+                this.x = width / 2;
+                this.y = height / 2;
+                this.angle = 0;
+                this.size = 20;
+                this.weaponLevel = 0;
+                this.xp = 0;
+                this.nextLevelXp = 50;
+                this.color = '#4fd1c5';
+                this.fireTimer = 0;
+                this.speedMultiplier = 1.0; // Incremento de Silver
+            }
+
+            update(mouseX, mouseY, firing) {
+                // Movimiento suave hacia el mouse (Lerp)
+                this.x += (mouseX - this.x) * 0.15;
+                this.y += (mouseY - this.y) * 0.15;
+                
+                // Rotación constante
+                this.angle += firing ? 0.3 : 0.05;
+
+                // Límites
+                this.x = Math.max(this.size, Math.min(width - this.size, this.x));
+                this.y = Math.max(this.size, Math.min(height - this.size, this.y));
+
+                // Disparo
+                if (firing) {
+                    this.fireTimer++;
+                    const weapon = WEAPONS[this.weaponLevel];
+                    // Calcular tasa de fuego efectiva (menor es más rápido)
+                    const effectiveRate = Math.max(2, Math.floor(weapon.rate / this.speedMultiplier));
+                    
+                    if (this.fireTimer % effectiveRate === 0) {
+                        this.shoot(weapon);
+                    }
+                } else {
+                    this.fireTimer = 0;
+                }
+            }
+
+            shoot(weapon) {
+                AudioSys.playShoot(1 + (this.weaponLevel * 0.2) + (this.speedMultiplier * 0.1));
+                
+                const spawnProjectile = (angleOffset) => {
+                    projectiles.push(new Projectile(
+                        this.x, 
+                        this.y, 
+                        this.angle + angleOffset, 
+                        weapon.color
+                    ));
+                };
+
+                if (weapon.type === 0) { // Simple
+                    spawnProjectile(0);
+                } else if (weapon.type === 1) { // Doble
+                    spawnProjectile(-0.2);
+                    spawnProjectile(0.2);
+                } else if (weapon.type === 2) { // Triple
+                    spawnProjectile(0);
+                    spawnProjectile(-0.3);
+                    spawnProjectile(0.3);
+                } else if (weapon.type === 3) { // Omni
+                    for(let i=0; i<8; i++) spawnProjectile((Math.PI*2/8) * i);
+                }
+                
+                // Retroceso visual
+                shake = 2 + this.weaponLevel;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                
+                // Dibujar Triángulo
+                ctx.beginPath();
+                ctx.moveTo(this.size, 0);
+                ctx.lineTo(-this.size/2, this.size/2);
+                ctx.lineTo(-this.size/2, -this.size/2);
+                ctx.closePath();
+                
+                ctx.fillStyle = '#000';
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3;
+                
+                // Glow effect
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                
+                ctx.fill();
+                ctx.stroke();
+
+                // Núcleo central
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Escudo visual (anillo XP)
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size + 10, 0, Math.PI*2 * (this.xp / this.nextLevelXp));
+                ctx.strokeStyle = `rgba(255, 255, 255, 0.5)`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            gainXp(amount) {
+                this.xp += amount;
+                if (this.xp >= this.nextLevelXp) {
+                    this.levelUp();
+                }
+            }
+            
+            levelUp() {
+                if (this.weaponLevel < WEAPONS.length - 1) {
+                    this.weaponLevel++;
+                    this.xp = 0;
+                    this.nextLevelXp *= 1.5;
+                    this.color = WEAPONS[this.weaponLevel].color;
+                    AudioSys.playPowerUp();
+                    this.updateHUD();
+                    // Explosion visual de nivel
+                    for(let i=0; i<30; i++) {
+                        particles.push(new Particle(this.x, this.y, this.color, 8));
+                    }
+                    createFloatingText("WEAPON UPGRADE!", this.x, this.y - 30, '#fff');
+                } else {
+                    score += 1000;
+                    this.xp = 0;
+                    createFloatingText("MAX POWER BONUS!", this.x, this.y - 30, '#ff0055');
+                }
+            }
+
+            collectPowerUp(type) {
+                AudioSys.playCollect(type);
+                if (type === 'silver') {
+                    // SILVER: Aumenta velocidad de disparo incrementalmente
+                    this.speedMultiplier += 0.15; // +15% velocidad
+                    if (this.speedMultiplier > 3.0) this.speedMultiplier = 3.0; // Cap
+                    
+                    createFloatingText("SPEED UP!", this.x, this.y - 40, '#c0c0c0');
+                    // Efecto visual
+                    for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#c0c0c0', 5));
+                } else if (type === 'gold') {
+                    // GOLD: Sube de nivel inmediatamente
+                    this.gainXp(this.nextLevelXp);
+                    createFloatingText("GOLD POWER!", this.x, this.y - 40, '#ffd700');
+                    // Efecto visual
+                    for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ffd700', 6));
+                }
+                this.updateHUD();
+            }
+
+            updateHUD() {
+                weaponEl.innerText = `SISTEMA: ${WEAPONS[this.weaponLevel].name}`;
+                weaponEl.style.color = this.color;
+                statsEl.innerText = `SPEED: ${Math.floor(this.speedMultiplier * 100)}%`;
+            }
+
+            takeDamage() {
+                if (this.weaponLevel > 0) {
+                    this.weaponLevel--;
+                    this.xp = 0;
+                    this.color = WEAPONS[this.weaponLevel].color;
+                    this.speedMultiplier = Math.max(1.0, this.speedMultiplier - 0.5); // Perder velocidad al ser golpeado
+                    this.updateHUD();
+                    
+                    weaponEl.innerText = `DAÑO CRÍTICO: ${WEAPONS[this.weaponLevel].name}`;
+                    weaponEl.style.color = 'red';
+                    shake = 20;
+                    document.body.classList.add('damage-flash');
+                    setTimeout(() => document.body.classList.remove('damage-flash'), 200);
+                    
+                    // Empuje de emergencia
+                    enemies.forEach(e => {
+                        const d = Math.hypot(e.x - this.x, e.y - this.y);
+                        if (d < 200) e.markedForDeletion = true;
+                    });
+                } else {
+                    // Game Over Soft Reset
+                    score = Math.max(0, score - 500);
+                    this.speedMultiplier = 1.0;
+                    this.updateHUD();
+                    shake = 30;
+                    weaponEl.innerText = "ALERTA: ESCUDOS BAJOS";
+                }
+            }
         }
 
-        /**
-         * INICIALIZACIÓN
-         */
+        class PowerUp {
+            constructor(type) {
+                this.type = type; // 'silver' or 'gold'
+                this.x = Math.random() * (width - 40) + 20;
+                this.y = Math.random() * (height - 40) + 20;
+                this.size = 12;
+                this.life = 600; // 10 segundos a 60fps
+                this.markedForDeletion = false;
+                this.pulse = 0;
+            }
+            
+            update() {
+                this.life--;
+                if (this.life <= 0) this.markedForDeletion = true;
+                this.pulse += 0.1;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                const scale = 1 + Math.sin(this.pulse) * 0.2;
+                ctx.scale(scale, scale);
+                
+                ctx.beginPath();
+                if (this.type === 'gold') {
+                    // Gold: Rombo
+                    ctx.moveTo(0, -this.size);
+                    ctx.lineTo(this.size, 0);
+                    ctx.lineTo(0, this.size);
+                    ctx.lineTo(-this.size, 0);
+                    ctx.fillStyle = '#ffd700';
+                    ctx.shadowColor = '#ffd700';
+                } else {
+                    // Silver: Círculo
+                    ctx.arc(0, 0, this.size, 0, Math.PI*2);
+                    ctx.fillStyle = '#c0c0c0';
+                    ctx.shadowColor = '#ffffff';
+                }
+                
+                // Desvanecerse cuando queda poco tiempo
+                if (this.life < 100 && Math.floor(this.life/10)%2===0) {
+                     ctx.globalAlpha = 0.2;
+                }
+                
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                
+                // Borde blanco
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, angle, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = Math.cos(angle) * 15;
+                this.vy = Math.sin(angle) * 15;
+                this.color = color;
+                this.markedForDeletion = false;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                    this.markedForDeletion = true;
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 4, 0, Math.PI*2);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class Enemy {
+            constructor() {
+                if (Math.random() < 0.5) {
+                    this.x = Math.random() < 0.5 ? -20 : width + 20;
+                    this.y = Math.random() * height;
+                } else {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() < 0.5 ? -20 : height + 20;
+                }
+                
+                this.size = Math.random() * 10 + 10;
+                this.speed = Math.random() * 2 + 1;
+                this.color = `hsl(${Math.random()*60 + 320}, 100%, 50%)`; 
+                this.markedForDeletion = false;
+                this.angle = 0;
+            }
+
+            update(player) {
+                const angle = Math.atan2(player.y - this.y, player.x - this.x);
+                this.x += Math.cos(angle) * this.speed;
+                this.y += Math.sin(angle) * this.speed;
+                this.angle += 0.1;
+                
+                const dist = Math.hypot(this.x - player.x, this.y - player.y);
+                if (dist < this.size + player.size) {
+                    player.takeDamage();
+                    this.markedForDeletion = true;
+                    this.explode();
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                ctx.rect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = 0.5;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.restore();
+            }
+
+            explode() {
+                AudioSys.playExplosion();
+                for(let i=0; i<8; i++) {
+                    particles.push(new Particle(this.x, this.y, this.color, Math.random() * 3 + 1));
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, speed) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const a = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(a) * speed;
+                this.vy = Math.sin(a) * speed;
+                this.life = 1;
+                this.decay = Math.random() * 0.05 + 0.02;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        let floatingTexts = [];
+        function createFloatingText(text, x, y, color) {
+            floatingTexts.push({ text, x, y, color, life: 1.0 });
+        }
+
+        // INPUT
+        const mouse = { x: width/2, y: height/2, active: false };
+        
         function init() {
             resize();
             window.addEventListener('resize', resize);
             
             const startHandler = () => {
-                if (!gameRunning) {
-                    gameRunning = true;
-                    overlay.style.opacity = 0;
-                    setTimeout(() => overlay.style.display = 'none', 1000);
+                if (!gameActive) {
+                    gameActive = true;
                     AudioSys.init();
-                    spawnParticles(50);
-                    updateStarsUI();
+                    overlay.style.opacity = 0;
+                    setTimeout(() => overlay.style.display = 'none', 500);
+                    player = new Player();
                     animate();
                 }
             };
-
-            overlay.addEventListener('click', startHandler);
-            overlay.addEventListener('touchstart', startHandler);
             
-            const updateInput = (x, y, active) => {
-                mouse.x = x;
-                mouse.y = y;
-                mouse.active = active;
-                if(active && gameRunning) createRipple(x, y);
-            };
+            overlay.addEventListener('mousedown', startHandler);
+            overlay.addEventListener('touchstart', startHandler);
 
-            window.addEventListener('mousemove', e => updateInput(e.clientX, e.clientY, mouse.active));
-            window.addEventListener('mousedown', e => updateInput(e.clientX, e.clientY, true));
+            window.addEventListener('mousemove', e => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+            window.addEventListener('mousedown', () => mouse.active = true);
             window.addEventListener('mouseup', () => mouse.active = false);
 
-            window.addEventListener('touchstart', e => {
-                e.preventDefault();
-                updateInput(e.touches[0].clientX, e.touches[0].clientY, true);
-            });
-            window.addEventListener('touchend', () => mouse.active = false);
             window.addEventListener('touchmove', e => {
                 e.preventDefault();
-                updateInput(e.touches[0].clientX, e.touches[0].clientY, true);
-            });
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }, {passive: false});
+            window.addEventListener('touchstart', e => {
+                e.preventDefault();
+                mouse.active = true;
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }, {passive: false});
+            window.addEventListener('touchend', () => mouse.active = false);
         }
 
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-        }
-
-        // Obtener colores actuales basado en el Mundo (Major Level)
-        function getCurrentPalette() {
-            // Usamos modulo (%) para que si majorLevel es 6, vuelva a usar los colores del índice 0, etc.
-            const index = (majorLevel - 1) % colors.length;
-            return colors[index];
-        }
-
-        function updateStarsUI() {
-            // Actualizar estrellas según subniveles completados
-            for(let i=1; i<=maxSubLevels; i++) {
-                const el = document.getElementById(`star-${i}`);
-                // Si subLevel es 2, estrellas 1 y 2 brillan
-                if(i <= subLevel) {
-                    el.classList.add('active');
-                    // Color de la estrella igual al color principal del mundo actual
-                    el.style.color = getCurrentPalette()[0]; 
-                } else {
-                    el.classList.remove('active');
-                    el.style.color = '#333';
-                }
-            }
-            worldIndicator.innerText = `Mundo ${majorLevel}`;
-        }
-
-        function advanceProgress() {
-            coreEnergy += 2.5; // Velocidad de llenado
-            
-            if (coreEnergy >= 100) {
-                // SE COMPLETÓ UNA CARGA -> SUBIR SUBNIVEL
-                coreEnergy = 0;
-                subLevel++;
-                
-                if (subLevel < maxSubLevels) {
-                    // Solo ganamos una estrella
-                    createShockwave(width/2, height/2, false); // Onda pequeña
-                    AudioSys.playSubLevelUp();
-                    spawnParticles(10); // Más partículas
-                } else {
-                    // SE COMPLETARON TODAS LAS ESTRELLAS -> SUBIR NIVEL MAYOR (MUNDO)
-                    majorLevel++;
-                    subLevel = 0; // Reiniciar estrellas
-                    
-                    createShockwave(width/2, height/2, true); // Onda GIGANTE
-                    AudioSys.playWorldShift();
-                    
-                    // Efecto visual en UI
-                    document.body.classList.add('shifting');
-                    setTimeout(() => document.body.classList.remove('shifting'), 1000);
-                    
-                    // Aumentar dificultad
-                    spawnParticles(20); 
-                }
-                updateStarsUI();
+            if(player) {
+                player.x = width/2;
+                player.y = height/2;
             }
         }
 
-        /**
-         * CLASES
-         */
-
-        class Core {
-            constructor() {
-                this.radius = 40;
-                this.pulse = 0;
-            }
-
-            draw() {
-                this.pulse += 0.05;
-                // Radio base + pulso + energía acumulada
-                const r = this.radius + Math.sin(this.pulse)*2 + (coreEnergy * 0.4);
-                
-                const pal = getCurrentPalette();
-                const mainColor = pal[0];
-
-                const grad = ctx.createRadialGradient(width/2, height/2, 10, width/2, height/2, r * 3);
-                grad.addColorStop(0, '#fff');
-                grad.addColorStop(0.3, mainColor);
-                grad.addColorStop(1, 'transparent');
-
-                ctx.beginPath();
-                ctx.arc(width/2, height/2, r * 2, 0, Math.PI * 2);
-                ctx.fillStyle = grad;
-                ctx.fill();
-
-                // Anillo de progreso (Energía actual para la siguiente estrella)
-                ctx.beginPath();
-                ctx.arc(width/2, height/2, r + 15, -Math.PI/2, (-Math.PI/2) + (Math.PI*2 * (coreEnergy/100)));
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-            }
-        }
-
-        class Particle {
-            constructor() {
-                this.init();
-            }
-
-            init(x, y) {
-                this.x = x || Math.random() * width;
-                this.y = y || Math.random() * height;
-                if (!x && Math.abs(this.x - width/2) < 150) this.x += 200;
-                
-                // Velocidad aumenta ligeramente con cada Mundo
-                const speedMult = 1 + (majorLevel * 0.2); 
-                this.vx = (Math.random() - 0.5) * speedMult;
-                this.vy = (Math.random() - 0.5) * speedMult;
-                this.size = Math.random() * 2 + 1;
-                
-                const pal = getCurrentPalette();
-                this.color = pal[Math.floor(Math.random() * pal.length)];
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Mouse interaction
-                if (mouse.active) {
-                    const dx = mouse.x - this.x;
-                    const dy = mouse.y - this.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 350) {
-                        const force = (350 - dist) / 350;
-                        this.vx += (dx / dist) * force * 0.8;
-                        this.vy += (dy / dist) * force * 0.8;
-                    }
-                }
-
-                // Core interaction
-                const dxCore = (width/2) - this.x;
-                const dyCore = (height/2) - this.y;
-                const distCore = Math.sqrt(dxCore*dxCore + dyCore*dyCore);
-                
-                this.vx += (dxCore / distCore) * 0.05;
-                this.vy += (dyCore / distCore) * 0.05;
-
-                this.vx *= 0.98;
-                this.vy *= 0.98;
-
-                const coreHitBox = 50 + (coreEnergy * 0.4);
-                if (distCore < coreHitBox) {
-                    this.onCollide();
-                }
-
-                if(this.x < 0 || this.x > width) this.vx *= -1;
-                if(this.y < 0 || this.y > height) this.vy *= -1;
-            }
-
-            onCollide() {
-                createSparks(this.x, this.y, 8, this.color);
-                AudioSys.playChime();
-                advanceProgress(); // Llamar a la nueva lógica de progreso
-                
-                this.init();
-                const angle = Math.random() * Math.PI * 2;
-                this.x = width/2 + Math.cos(angle) * (width/2);
-                this.y = height/2 + Math.sin(angle) * (height/2);
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
-        }
-
-        class Spark extends Particle {
-            constructor(x, y, color) {
-                super();
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.vx = (Math.random() - 0.5) * 15;
-                this.vy = (Math.random() - 0.5) * 15;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.03 + 0.01;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= 0.9;
-                this.vy *= 0.9;
-                this.life -= this.decay;
-            }
-            draw() {
-                ctx.globalAlpha = Math.max(0, this.life);
-                super.draw();
-                ctx.globalAlpha = 1;
-            }
-        }
-
-        class Shockwave {
-            constructor(x, y, isMajor) {
-                this.x = x;
-                this.y = y;
-                this.radius = 1;
-                this.alpha = 1;
-                this.isMajor = isMajor; // ¿Es cambio de mundo o solo subnivel?
-                this.width = isMajor ? 50 : 5;
-                this.speed = isMajor ? 25 : 15;
-            }
-            update() {
-                this.radius += this.speed;
-                this.alpha -= 0.02;
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                // Si es Major, es blanca brillante, si no, color del mundo
-                ctx.strokeStyle = this.isMajor ? 
-                    `rgba(255, 255, 255, ${this.alpha})` : 
-                    `rgba(255, 255, 255, ${this.alpha * 0.5})`;
-                ctx.lineWidth = this.width;
-                ctx.stroke();
-            }
-        }
-
-        // Instancias
-        const core = new Core();
-        let sparks = [];
-        let shockwaves = [];
-
-        function spawnParticles(amount) {
-            for(let i=0; i<amount; i++) particles.push(new Particle());
-        }
-
-        function createSparks(x, y, count, color) {
-            for(let i=0; i<count; i++) sparks.push(new Spark(x, y, color));
-        }
-
-        function createShockwave(x, y, isMajor) {
-            shockwaves.push(new Shockwave(x, y, isMajor));
-        }
-
-        function createRipple(x, y) {
-            ripples.push({x, y, r: 1, a: 1});
-        }
-
-        /**
-         * BUCLE DE ANIMACIÓN
-         */
         function animate() {
-            if (!gameRunning) return;
             requestAnimationFrame(animate);
+            
+            let shakeX = 0, shakeY = 0;
+            if (shake > 0) {
+                shakeX = (Math.random() - 0.5) * shake;
+                shakeY = (Math.random() - 0.5) * shake;
+                shake *= 0.9;
+                if(shake < 0.5) shake = 0;
+            }
+
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
 
             ctx.fillStyle = 'rgba(5, 5, 10, 0.3)';
-            ctx.fillRect(0, 0, width, height);
-            
-            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillRect(-shakeX, -shakeY, width, height); 
 
-            core.draw();
+            if (gameActive) {
+                frames++;
 
-            // Dibujar Partículas
-            ctx.lineWidth = 0.5;
-            for(let i=0; i<particles.length; i++) {
-                const p = particles[i];
-                // Actualizamos colores de partículas viejas si cambia el mundo
-                // (Opcional: podemos dejar que mueran con el color viejo para transición suave)
-                // Pero para uniformidad, forzamos re-init de color a veces o solo en nuevas
-                
-                p.update();
-                p.draw();
-                
-                // Conexiones
-                if (i % 2 === 0) { 
-                    for(let j=i+1; j<particles.length; j+=4) {
-                        const p2 = particles[j];
-                        const dx = p.x - p2.x;
-                        const dy = p.y - p2.y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
-                        if (dist < 100) {
-                            ctx.beginPath();
-                            ctx.moveTo(p.x, p.y);
-                            ctx.lineTo(p2.x, p2.y);
-                            ctx.strokeStyle = `rgba(255,255,255, ${0.1 * (1 - dist/100)})`;
-                            ctx.stroke();
-                        }
-                    }
+                // Enemy Spawn
+                const spawnRate = Math.max(20, 60 - Math.floor(score / 200));
+                if (frames % spawnRate === 0) {
+                    enemies.push(new Enemy());
                 }
-            }
 
-            for(let i=sparks.length-1; i>=0; i--) {
-                const s = sparks[i];
-                s.update();
-                s.draw();
-                if(s.life <= 0) sparks.splice(i, 1);
-            }
+                // PowerUp Spawn (Raro)
+                // Silver: ~1 cada 8 segundos (0.2%)
+                if (Math.random() < 0.002) powerups.push(new PowerUp('silver'));
+                // Gold: ~1 cada 30 segundos (0.05%)
+                if (Math.random() < 0.0005) powerups.push(new PowerUp('gold'));
 
-            for(let i=shockwaves.length-1; i>=0; i--) {
-                const sw = shockwaves[i];
-                sw.update();
-                sw.draw();
-                if(sw.alpha <= 0) shockwaves.splice(i, 1);
-            }
+                // Player
+                player.update(mouse.x, mouse.y, mouse.active);
+                player.draw();
 
-            ctx.globalCompositeOperation = 'source-over';
+                // Projectiles
+                projectiles.forEach((p, index) => {
+                    p.update();
+                    p.draw();
+                    if (p.markedForDeletion) projectiles.splice(index, 1);
+                });
+
+                // Enemies
+                enemies.forEach((e, eIndex) => {
+                    e.update(player);
+                    e.draw();
+
+                    projectiles.forEach((p, pIndex) => {
+                        const dist = Math.hypot(p.x - e.x, p.y - e.y);
+                        if (dist < e.size + 4) { 
+                            e.explode();
+                            e.markedForDeletion = true;
+                            p.markedForDeletion = true;
+                            score += 50;
+                            player.gainXp(20);
+                            scoreEl.innerText = `SCORE: ${score}`;
+                            shake = 2;
+                        }
+                    });
+                });
+                
+                // PowerUps
+                powerups.forEach((pu, index) => {
+                    pu.update();
+                    pu.draw();
+                    
+                    const dist = Math.hypot(player.x - pu.x, player.y - pu.y);
+                    if (dist < player.size + pu.size) {
+                        player.collectPowerUp(pu.type);
+                        pu.markedForDeletion = true;
+                    }
+
+                    if (pu.markedForDeletion) powerups.splice(index, 1);
+                });
+
+                enemies = enemies.filter(e => !e.markedForDeletion);
+                projectiles = projectiles.filter(p => !p.markedForDeletion);
+
+                // Particles
+                particles.forEach((p, index) => {
+                    p.update();
+                    p.draw();
+                    if (p.life <= 0) particles.splice(index, 1);
+                });
+
+                // Floating Texts
+                floatingTexts.forEach((ft, index) => {
+                    ft.y -= 1;
+                    ft.life -= 0.02;
+                    
+                    ctx.fillStyle = ft.color;
+                    ctx.font = "bold 16px Arial";
+                    ctx.globalAlpha = Math.max(0, ft.life);
+                    ctx.fillText(ft.text, ft.x, ft.y);
+                    ctx.globalAlpha = 1;
+
+                    if (ft.life <= 0) floatingTexts.splice(index, 1);
+                });
+            }
             
-            for(let i=ripples.length-1; i>=0; i--) {
-                const r = ripples[i];
-                r.r += 3;
-                r.a -= 0.03;
-                ctx.beginPath();
-                ctx.arc(r.x, r.y, r.r, 0, Math.PI*2);
-                ctx.strokeStyle = `rgba(100, 255, 255, ${r.a})`;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-                if(r.a <= 0) ripples.splice(i, 1);
-            }
+            ctx.restore();
         }
 
         init();
+
     </script>
 </body>
 </html>
