@@ -12,16 +12,18 @@
             height: 100%;
             background-color: #050505;
             overflow: hidden;
-            touch-action: none;
+            touch-action: none; /* Crucial para móviles */
+            user-select: none;  /* Evitar selección de texto */
+            -webkit-user-select: none;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            cursor: none; /* Ocultar cursor nativo */
+            cursor: none; 
         }
 
         canvas {
             display: block;
         }
 
-        /* HUD Holográfico */
+        /* HUD Holográfico Optimizado */
         #hud {
             position: absolute;
             top: 20px;
@@ -64,26 +66,35 @@
             z-index: 20;
             transition: opacity 0.5s;
             cursor: pointer;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         h1 {
-            font-size: 40px;
+            font-size: 40px; /* Tamaño base */
             text-transform: uppercase;
             background: linear-gradient(to right, #4fd1c5, #fff, #ff0055);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 0 0 10px 0;
             animation: glitch 1s infinite alternate;
+            text-align: center;
         }
 
-        p { font-size: 14px; opacity: 0.7; letter-spacing: 1px; text-align: center; }
+        p { font-size: 14px; opacity: 0.7; letter-spacing: 1px; text-align: center; margin: 5px 0; }
+
+        /* Media Query para móviles pequeños */
+        @media (max-width: 600px) {
+            h1 { font-size: 28px; }
+            #score { font-size: 18px; }
+            #hud { top: 10px; left: 10px; }
+        }
 
         @keyframes glitch {
             0% { text-shadow: 2px 0 #ff0055, -2px 0 #4fd1c5; }
             100% { text-shadow: -2px 0 #ff0055, 2px 0 #4fd1c5; }
         }
         
-        /* Efecto de daño */
         .damage-flash {
             animation: flashRed 0.2s ease-out;
         }
@@ -228,7 +239,7 @@
         let enemies = [];
         let particles = [];
         let powerups = [];
-        let shake = 0; // Screen shake
+        let shake = 0; 
 
         // Configuración de Armas
         const WEAPONS = [
@@ -243,32 +254,50 @@
                 this.x = width / 2;
                 this.y = height / 2;
                 this.angle = 0;
-                this.size = 20;
+                this.innerAngle = 0; // Rotación independiente del núcleo
+                this.size = 25; // Ligeramente más grande para visibilidad móvil
                 this.weaponLevel = 0;
                 this.xp = 0;
                 this.nextLevelXp = 50;
                 this.color = '#4fd1c5';
                 this.fireTimer = 0;
-                this.speedMultiplier = 1.0; // Incremento de Silver
+                this.speedMultiplier = 1.0;
+                
+                // Sistema de Trail (Estela)
+                this.trail = []; 
+                this.maxTrail = 6;
             }
 
             update(mouseX, mouseY, firing) {
-                // Movimiento suave hacia el mouse (Lerp)
+                // Guardar posición para trail
+                this.trail.push({x: this.x, y: this.y, angle: this.angle});
+                if(this.trail.length > this.maxTrail) this.trail.shift();
+
+                // Movimiento (Lerp)
+                // Si es táctil, el mouseX/Y ya viene con offset calculado en el eventListener
                 this.x += (mouseX - this.x) * 0.15;
                 this.y += (mouseY - this.y) * 0.15;
                 
-                // Rotación constante
-                this.angle += firing ? 0.3 : 0.05;
+                // Rotaciones
+                this.angle += firing ? 0.2 : 0.05;
+                this.innerAngle -= 0.1; // Núcleo gira al revés
 
                 // Límites
                 this.x = Math.max(this.size, Math.min(width - this.size, this.x));
                 this.y = Math.max(this.size, Math.min(height - this.size, this.y));
 
+                // Emitir partículas de motor si se mueve rápido
+                if (Math.abs(mouseX - this.x) > 2 || Math.abs(mouseY - this.y) > 2) {
+                     if(frames % 5 === 0) {
+                         // Partícula sale en dirección opuesta al movimiento (aprox)
+                         particles.push(new Particle(this.x, this.y, this.color, 2)); 
+                     }
+                }
+
                 // Disparo
                 if (firing) {
                     this.fireTimer++;
                     const weapon = WEAPONS[this.weaponLevel];
-                    // Calcular tasa de fuego efectiva (menor es más rápido)
                     const effectiveRate = Math.max(2, Math.floor(weapon.rate / this.speedMultiplier));
                     
                     if (this.fireTimer % effectiveRate === 0) {
@@ -304,45 +333,82 @@
                     for(let i=0; i<8; i++) spawnProjectile((Math.PI*2/8) * i);
                 }
                 
-                // Retroceso visual
                 shake = 2 + this.weaponLevel;
             }
 
             draw() {
+                // Dibujar Estela (Ghost Trail)
+                for(let i=0; i<this.trail.length; i++) {
+                    const t = this.trail[i];
+                    const alpha = (i / this.trail.length) * 0.3;
+                    ctx.save();
+                    ctx.translate(t.x, t.y);
+                    ctx.rotate(t.angle);
+                    ctx.beginPath();
+                    ctx.moveTo(this.size, 0);
+                    ctx.lineTo(-this.size/2, this.size/2);
+                    ctx.lineTo(-this.size/2, -this.size/2);
+                    ctx.closePath();
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.fill();
+                    ctx.restore();
+                }
+
                 ctx.save();
                 ctx.translate(this.x, this.y);
+                
+                // Rotación Externa (Cuerpo principal)
+                ctx.save();
                 ctx.rotate(this.angle);
                 
-                // Dibujar Triángulo
+                // Triángulo Principal (Hueco)
                 ctx.beginPath();
                 ctx.moveTo(this.size, 0);
                 ctx.lineTo(-this.size/2, this.size/2);
                 ctx.lineTo(-this.size/2, -this.size/2);
                 ctx.closePath();
                 
-                ctx.fillStyle = '#000';
                 ctx.strokeStyle = this.color;
                 ctx.lineWidth = 3;
-                
-                // Glow effect
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = this.color;
-                
-                ctx.fill();
                 ctx.stroke();
-
-                // Núcleo central
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(0, 0, 5, 0, Math.PI*2);
-                ctx.fill();
                 
-                // Escudo visual (anillo XP)
+                // Relleno semitransparente
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = 0.1;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+                ctx.restore(); // Fin rotación externa
+
+                // Núcleo Giratorio (Interno)
+                ctx.save();
+                ctx.rotate(this.innerAngle);
                 ctx.beginPath();
-                ctx.arc(0, 0, this.size + 10, 0, Math.PI*2 * (this.xp / this.nextLevelXp));
-                ctx.strokeStyle = `rgba(255, 255, 255, 0.5)`;
+                // Forma de diamante/núcleo
+                ctx.rect(-8, -8, 16, 16);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+                ctx.restore();
+
+                // Escudo de XP (Anillo externo estático o pulsante)
+                const xpRatio = this.xp / this.nextLevelXp;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size + 8, -Math.PI/2, -Math.PI/2 + (Math.PI*2 * xpRatio));
+                ctx.strokeStyle = `rgba(255, 255, 255, 0.8)`;
                 ctx.lineWidth = 2;
                 ctx.stroke();
+                
+                // Indicador de nivel de arma (puntos debajo de la nave)
+                /*
+                for(let i=0; i<=this.weaponLevel; i++) {
+                    ctx.beginPath();
+                    ctx.arc((i - this.weaponLevel/2) * 10, this.size + 15, 2, 0, Math.PI*2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                }
+                */
 
                 ctx.restore();
             }
@@ -362,33 +428,27 @@
                     this.color = WEAPONS[this.weaponLevel].color;
                     AudioSys.playPowerUp();
                     this.updateHUD();
-                    // Explosion visual de nivel
                     for(let i=0; i<30; i++) {
                         particles.push(new Particle(this.x, this.y, this.color, 8));
                     }
-                    createFloatingText("WEAPON UPGRADE!", this.x, this.y - 30, '#fff');
+                    createFloatingText("WEAPON UPGRADE!", this.x, this.y - 40, '#fff');
                 } else {
                     score += 1000;
                     this.xp = 0;
-                    createFloatingText("MAX POWER BONUS!", this.x, this.y - 30, '#ff0055');
+                    createFloatingText("MAX POWER BONUS!", this.x, this.y - 40, '#ff0055');
                 }
             }
 
             collectPowerUp(type) {
                 AudioSys.playCollect(type);
                 if (type === 'silver') {
-                    // SILVER: Aumenta velocidad de disparo incrementalmente
-                    this.speedMultiplier += 0.15; // +15% velocidad
-                    if (this.speedMultiplier > 3.0) this.speedMultiplier = 3.0; // Cap
-                    
-                    createFloatingText("SPEED UP!", this.x, this.y - 40, '#c0c0c0');
-                    // Efecto visual
+                    this.speedMultiplier += 0.15; 
+                    if (this.speedMultiplier > 3.0) this.speedMultiplier = 3.0; 
+                    createFloatingText("SPEED UP!", this.x, this.y - 50, '#c0c0c0');
                     for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#c0c0c0', 5));
                 } else if (type === 'gold') {
-                    // GOLD: Sube de nivel inmediatamente
                     this.gainXp(this.nextLevelXp);
-                    createFloatingText("GOLD POWER!", this.x, this.y - 40, '#ffd700');
-                    // Efecto visual
+                    createFloatingText("GOLD POWER!", this.x, this.y - 50, '#ffd700');
                     for(let i=0; i<15; i++) particles.push(new Particle(this.x, this.y, '#ffd700', 6));
                 }
                 this.updateHUD();
@@ -405,7 +465,7 @@
                     this.weaponLevel--;
                     this.xp = 0;
                     this.color = WEAPONS[this.weaponLevel].color;
-                    this.speedMultiplier = Math.max(1.0, this.speedMultiplier - 0.5); // Perder velocidad al ser golpeado
+                    this.speedMultiplier = Math.max(1.0, this.speedMultiplier - 0.5); 
                     this.updateHUD();
                     
                     weaponEl.innerText = `DAÑO CRÍTICO: ${WEAPONS[this.weaponLevel].name}`;
@@ -414,13 +474,11 @@
                     document.body.classList.add('damage-flash');
                     setTimeout(() => document.body.classList.remove('damage-flash'), 200);
                     
-                    // Empuje de emergencia
                     enemies.forEach(e => {
                         const d = Math.hypot(e.x - this.x, e.y - this.y);
                         if (d < 200) e.markedForDeletion = true;
                     });
                 } else {
-                    // Game Over Soft Reset
                     score = Math.max(0, score - 500);
                     this.speedMultiplier = 1.0;
                     this.updateHUD();
@@ -432,11 +490,11 @@
 
         class PowerUp {
             constructor(type) {
-                this.type = type; // 'silver' or 'gold'
+                this.type = type; 
                 this.x = Math.random() * (width - 40) + 20;
                 this.y = Math.random() * (height - 40) + 20;
                 this.size = 12;
-                this.life = 600; // 10 segundos a 60fps
+                this.life = 600; 
                 this.markedForDeletion = false;
                 this.pulse = 0;
             }
@@ -455,7 +513,6 @@
                 
                 ctx.beginPath();
                 if (this.type === 'gold') {
-                    // Gold: Rombo
                     ctx.moveTo(0, -this.size);
                     ctx.lineTo(this.size, 0);
                     ctx.lineTo(0, this.size);
@@ -463,25 +520,20 @@
                     ctx.fillStyle = '#ffd700';
                     ctx.shadowColor = '#ffd700';
                 } else {
-                    // Silver: Círculo
                     ctx.arc(0, 0, this.size, 0, Math.PI*2);
                     ctx.fillStyle = '#c0c0c0';
                     ctx.shadowColor = '#ffffff';
                 }
                 
-                // Desvanecerse cuando queda poco tiempo
                 if (this.life < 100 && Math.floor(this.life/10)%2===0) {
                      ctx.globalAlpha = 0.2;
                 }
                 
                 ctx.shadowBlur = 15;
                 ctx.fill();
-                
-                // Borde blanco
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
                 ctx.stroke();
-                
                 ctx.restore();
             }
         }
@@ -600,8 +652,10 @@
             floatingTexts.push({ text, x, y, color, life: 1.0 });
         }
 
-        // INPUT
-        const mouse = { x: width/2, y: height/2, active: false };
+        // INPUT & MOBILE HANDLING
+        // Inicializamos fuera de pantalla
+        const mouse = { x: -100, y: -100, active: false };
+        let isTouch = false;
         
         function init() {
             resize();
@@ -619,35 +673,52 @@
             };
             
             overlay.addEventListener('mousedown', startHandler);
-            overlay.addEventListener('touchstart', startHandler);
+            overlay.addEventListener('touchstart', (e) => {
+                isTouch = true;
+                e.preventDefault();
+                startHandler();
+            }, {passive: false});
 
+            // Mouse Events
             window.addEventListener('mousemove', e => {
-                mouse.x = e.clientX;
-                mouse.y = e.clientY;
+                if(!isTouch) {
+                    mouse.x = e.clientX;
+                    mouse.y = e.clientY;
+                }
             });
             window.addEventListener('mousedown', () => mouse.active = true);
             window.addEventListener('mouseup', () => mouse.active = false);
 
+            // Touch Events (Optimizados para móvil)
             window.addEventListener('touchmove', e => {
-                e.preventDefault();
+                e.preventDefault(); // Prevenir scroll
+                isTouch = true;
                 mouse.x = e.touches[0].clientX;
-                mouse.y = e.touches[0].clientY;
+                // Offset Y para que el dedo no tape la nave
+                mouse.y = e.touches[0].clientY - 50; 
             }, {passive: false});
+
             window.addEventListener('touchstart', e => {
                 e.preventDefault();
+                isTouch = true;
                 mouse.active = true;
                 mouse.x = e.touches[0].clientX;
-                mouse.y = e.touches[0].clientY;
+                mouse.y = e.touches[0].clientY - 50;
             }, {passive: false});
-            window.addEventListener('touchend', () => mouse.active = false);
+
+            window.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                mouse.active = false;
+            }, {passive: false});
         }
 
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             if(player) {
-                player.x = width/2;
-                player.y = height/2;
+                // Mantener al jugador dentro si la pantalla se achica
+                player.x = Math.min(width - player.size, Math.max(player.size, player.x));
+                player.y = Math.min(height - player.size, Math.max(player.size, player.y));
             }
         }
 
@@ -677,13 +748,17 @@
                     enemies.push(new Enemy());
                 }
 
-                // PowerUp Spawn (Raro)
-                // Silver: ~1 cada 8 segundos (0.2%)
+                // PowerUp Spawn
                 if (Math.random() < 0.002) powerups.push(new PowerUp('silver'));
-                // Gold: ~1 cada 30 segundos (0.05%)
                 if (Math.random() < 0.0005) powerups.push(new PowerUp('gold'));
 
-                // Player
+                // Player Logic
+                // Si es el primer frame, centra el mouse al jugador para evitar salto
+                if(frames === 1) {
+                    mouse.x = width/2;
+                    mouse.y = height/2;
+                }
+                
                 player.update(mouse.x, mouse.y, mouse.active);
                 player.draw();
 
@@ -729,6 +804,7 @@
 
                 enemies = enemies.filter(e => !e.markedForDeletion);
                 projectiles = projectiles.filter(p => !p.markedForDeletion);
+                powerups = powerups.filter(p => !p.markedForDeletion);
 
                 // Particles
                 particles.forEach((p, index) => {
@@ -744,6 +820,7 @@
                     
                     ctx.fillStyle = ft.color;
                     ctx.font = "bold 16px Arial";
+                    ctx.textAlign = "center"; // Centrar texto
                     ctx.globalAlpha = Math.max(0, ft.life);
                     ctx.fillText(ft.text, ft.x, ft.y);
                     ctx.globalAlpha = 1;
