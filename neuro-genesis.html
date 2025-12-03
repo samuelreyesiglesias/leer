@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neuro-Genesis: Ascension</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050505;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            z-index: 20;
+            transition: opacity 1s;
+            cursor: pointer;
+        }
+
+        h1 {
+            font-weight: 100;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        p {
+            font-size: 12px;
+            opacity: 0.7;
+            letter-spacing: 2px;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Contenedor de estrellas y nivel */
+        #status-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #world-indicator {
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .star {
+            display: inline-block;
+            color: #333; /* Estrellas apagadas más oscuras */
+            font-size: 24px; /* Un poco más grandes */
+            margin: 0 8px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 0 0 2px rgba(0,0,0,1);
+        }
+        
+        .star.active {
+            color: #fff;
+            text-shadow: 0 0 15px #fff, 0 0 30px currentColor;
+            transform: scale(1.4);
+        }
+
+        /* Animación para cuando se completa el nivel superior */
+        @keyframes world-shift {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(5); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        
+        .shifting {
+            animation: world-shift 1s ease-out;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="vignette"></div>
+    
+    <div id="ui-layer">
+        <div id="status-bar">
+            <div id="world-indicator">Mundo 1</div>
+            <div id="stars-container">
+                <!-- Las estrellas se generan dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <div id="start-overlay">
+        <h1>Neuro-Genesis</h1>
+        <p>Toca para iniciar la Ascensión</p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        /**
+         * SISTEMA DE AUDIO (Web Audio API)
+         */
+        const AudioSys = {
+            ctx: null,
+            masterGain: null,
+            scale: [196.00, 220.00, 246.94, 293.66, 329.63, 392.00, 440.00, 587.33], 
+            
+            init() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.3; 
+                this.masterGain.connect(this.ctx.destination);
+                this.startDrone();
+            },
+
+            startDrone() {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.value = 98.00; 
+                
+                filter.type = 'lowpass';
+                filter.frequency.value = 200;
+
+                setInterval(() => {
+                    if(this.ctx.state === 'running') {
+                        const time = this.ctx.currentTime;
+                        filter.frequency.setValueAtTime(200 + Math.sin(time) * 50, time);
+                    }
+                }, 100);
+
+                gain.gain.value = 0.5;
+                osc.connect(filter);
+                filter.connect(this.masterGain);
+                gain.connect(this.masterGain);
+                osc.start();
+            },
+
+            playChime() {
+                if (!this.ctx) return;
+                const note = this.scale[Math.floor(Math.random() * this.scale.length)];
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(note, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.5);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 2);
+            },
+
+            // Sonido para ganar una estrella (Subnivel)
+            playSubLevelUp() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(880, this.ctx.currentTime + 0.3); // Tono ascendente corto
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.5);
+            },
+
+            // Sonido épico para cambio de MUNDO
+            playWorldShift() {
+                if (!this.ctx) return;
+                // Bajo profundo
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.frequency.setValueAtTime(100, this.ctx.currentTime);
+                osc1.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 2);
+                gain1.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 3);
+                
+                // Brillo agudo
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = "square";
+                osc2.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc2.frequency.linearRampToValueAtTime(1200, this.ctx.currentTime + 0.1);
+                gain2.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain2.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1);
+
+                osc1.connect(gain1);
+                gain1.connect(this.masterGain);
+                osc1.start();
+
+                osc2.connect(gain2);
+                gain2.connect(this.masterGain);
+                osc2.start();
+            }
+        };
+
+        /**
+         * CONFIGURACIÓN & ESTADO
+         */
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('start-overlay');
+        const starsContainer = document.getElementById('stars-container');
+        const worldIndicator = document.getElementById('world-indicator');
+        
+        let width, height;
+        let particles = [];
+        let ripples = [];
+        
+        // --- NUEVA LÓGICA DE NIVELES ---
+        let majorLevel = 1;      // El "Mundo" actual (1, 2, 3...)
+        let subLevel = 0;        // Estrellas conseguidas (0 a 5)
+        const maxSubLevels = 5;  // Cantidad de estrellas para avanzar de mundo
+        let coreEnergy = 0;      // Progreso para la siguiente estrella (0-100)
+        
+        let gameRunning = false;
+        const mouse = { x: -1000, y: -1000, active: false };
+
+        // Paletas de colores cíclicas
+        const colors = [
+            ['#4fd1c5', '#63b3ed', '#faf089'], // Mundo 1: Calma (Cyan/Gold)
+            ['#f6ad55', '#f6e05e', '#68d391'], // Mundo 2: Naturaleza (Orange/Green)
+            ['#b794f4', '#f687b3', '#63b3ed'], // Mundo 3: Sueños (Pink/Purple)
+            ['#76e4f7', '#d6bcfa', '#9f7aea'], // Mundo 4: Éter (Ice/Violet)
+            ['#ffffff', '#fc8181', '#f6ad55'], // Mundo 5: Fuego Sagrado (White/Red)
+            ['#00ff00', '#000000', '#333333']  // Mundo 6: Matrix (Green/Black - Ejemplo de loop)
+        ];
+
+        // Generar UI de Estrellas (Subniveles)
+        for(let i=1; i<=maxSubLevels; i++) {
+            const s = document.createElement('span');
+            s.innerHTML = '★'; 
+            s.className = 'star';
+            s.id = `star-${i}`;
+            starsContainer.appendChild(s);
+        }
+
+        /**
+         * INICIALIZACIÓN
+         */
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            
+            const startHandler = () => {
+                if (!gameRunning) {
+                    gameRunning = true;
+                    overlay.style.opacity = 0;
+                    setTimeout(() => overlay.style.display = 'none', 1000);
+                    AudioSys.init();
+                    spawnParticles(50);
+                    updateStarsUI();
+                    animate();
+                }
+            };
+
+            overlay.addEventListener('click', startHandler);
+            overlay.addEventListener('touchstart', startHandler);
+            
+            const updateInput = (x, y, active) => {
+                mouse.x = x;
+                mouse.y = y;
+                mouse.active = active;
+                if(active && gameRunning) createRipple(x, y);
+            };
+
+            window.addEventListener('mousemove', e => updateInput(e.clientX, e.clientY, mouse.active));
+            window.addEventListener('mousedown', e => updateInput(e.clientX, e.clientY, true));
+            window.addEventListener('mouseup', () => mouse.active = false);
+
+            window.addEventListener('touchstart', e => {
+                e.preventDefault();
+                updateInput(e.touches[0].clientX, e.touches[0].clientY, true);
+            });
+            window.addEventListener('touchend', () => mouse.active = false);
+            window.addEventListener('touchmove', e => {
+                e.preventDefault();
+                updateInput(e.touches[0].clientX, e.touches[0].clientY, true);
+            });
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        // Obtener colores actuales basado en el Mundo (Major Level)
+        function getCurrentPalette() {
+            // Usamos modulo (%) para que si majorLevel es 6, vuelva a usar los colores del índice 0, etc.
+            const index = (majorLevel - 1) % colors.length;
+            return colors[index];
+        }
+
+        function updateStarsUI() {
+            // Actualizar estrellas según subniveles completados
+            for(let i=1; i<=maxSubLevels; i++) {
+                const el = document.getElementById(`star-${i}`);
+                // Si subLevel es 2, estrellas 1 y 2 brillan
+                if(i <= subLevel) {
+                    el.classList.add('active');
+                    // Color de la estrella igual al color principal del mundo actual
+                    el.style.color = getCurrentPalette()[0]; 
+                } else {
+                    el.classList.remove('active');
+                    el.style.color = '#333';
+                }
+            }
+            worldIndicator.innerText = `Mundo ${majorLevel}`;
+        }
+
+        function advanceProgress() {
+            coreEnergy += 2.5; // Velocidad de llenado
+            
+            if (coreEnergy >= 100) {
+                // SE COMPLETÓ UNA CARGA -> SUBIR SUBNIVEL
+                coreEnergy = 0;
+                subLevel++;
+                
+                if (subLevel < maxSubLevels) {
+                    // Solo ganamos una estrella
+                    createShockwave(width/2, height/2, false); // Onda pequeña
+                    AudioSys.playSubLevelUp();
+                    spawnParticles(10); // Más partículas
+                } else {
+                    // SE COMPLETARON TODAS LAS ESTRELLAS -> SUBIR NIVEL MAYOR (MUNDO)
+                    majorLevel++;
+                    subLevel = 0; // Reiniciar estrellas
+                    
+                    createShockwave(width/2, height/2, true); // Onda GIGANTE
+                    AudioSys.playWorldShift();
+                    
+                    // Efecto visual en UI
+                    document.body.classList.add('shifting');
+                    setTimeout(() => document.body.classList.remove('shifting'), 1000);
+                    
+                    // Aumentar dificultad
+                    spawnParticles(20); 
+                }
+                updateStarsUI();
+            }
+        }
+
+        /**
+         * CLASES
+         */
+
+        class Core {
+            constructor() {
+                this.radius = 40;
+                this.pulse = 0;
+            }
+
+            draw() {
+                this.pulse += 0.05;
+                // Radio base + pulso + energía acumulada
+                const r = this.radius + Math.sin(this.pulse)*2 + (coreEnergy * 0.4);
+                
+                const pal = getCurrentPalette();
+                const mainColor = pal[0];
+
+                const grad = ctx.createRadialGradient(width/2, height/2, 10, width/2, height/2, r * 3);
+                grad.addColorStop(0, '#fff');
+                grad.addColorStop(0.3, mainColor);
+                grad.addColorStop(1, 'transparent');
+
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, r * 2, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // Anillo de progreso (Energía actual para la siguiente estrella)
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, r + 15, -Math.PI/2, (-Math.PI/2) + (Math.PI*2 * (coreEnergy/100)));
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+        }
+
+        class Particle {
+            constructor() {
+                this.init();
+            }
+
+            init(x, y) {
+                this.x = x || Math.random() * width;
+                this.y = y || Math.random() * height;
+                if (!x && Math.abs(this.x - width/2) < 150) this.x += 200;
+                
+                // Velocidad aumenta ligeramente con cada Mundo
+                const speedMult = 1 + (majorLevel * 0.2); 
+                this.vx = (Math.random() - 0.5) * speedMult;
+                this.vy = (Math.random() - 0.5) * speedMult;
+                this.size = Math.random() * 2 + 1;
+                
+                const pal = getCurrentPalette();
+                this.color = pal[Math.floor(Math.random() * pal.length)];
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Mouse interaction
+                if (mouse.active) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 350) {
+                        const force = (350 - dist) / 350;
+                        this.vx += (dx / dist) * force * 0.8;
+                        this.vy += (dy / dist) * force * 0.8;
+                    }
+                }
+
+                // Core interaction
+                const dxCore = (width/2) - this.x;
+                const dyCore = (height/2) - this.y;
+                const distCore = Math.sqrt(dxCore*dxCore + dyCore*dyCore);
+                
+                this.vx += (dxCore / distCore) * 0.05;
+                this.vy += (dyCore / distCore) * 0.05;
+
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                const coreHitBox = 50 + (coreEnergy * 0.4);
+                if (distCore < coreHitBox) {
+                    this.onCollide();
+                }
+
+                if(this.x < 0 || this.x > width) this.vx *= -1;
+                if(this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            onCollide() {
+                createSparks(this.x, this.y, 8, this.color);
+                AudioSys.playChime();
+                advanceProgress(); // Llamar a la nueva lógica de progreso
+                
+                this.init();
+                const angle = Math.random() * Math.PI * 2;
+                this.x = width/2 + Math.cos(angle) * (width/2);
+                this.y = height/2 + Math.sin(angle) * (height/2);
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        class Spark extends Particle {
+            constructor(x, y, color) {
+                super();
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * 15;
+                this.vy = (Math.random() - 0.5) * 15;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.01;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.9;
+                this.vy *= 0.9;
+                this.life -= this.decay;
+            }
+            draw() {
+                ctx.globalAlpha = Math.max(0, this.life);
+                super.draw();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        class Shockwave {
+            constructor(x, y, isMajor) {
+                this.x = x;
+                this.y = y;
+                this.radius = 1;
+                this.alpha = 1;
+                this.isMajor = isMajor; // ¿Es cambio de mundo o solo subnivel?
+                this.width = isMajor ? 50 : 5;
+                this.speed = isMajor ? 25 : 15;
+            }
+            update() {
+                this.radius += this.speed;
+                this.alpha -= 0.02;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                // Si es Major, es blanca brillante, si no, color del mundo
+                ctx.strokeStyle = this.isMajor ? 
+                    `rgba(255, 255, 255, ${this.alpha})` : 
+                    `rgba(255, 255, 255, ${this.alpha * 0.5})`;
+                ctx.lineWidth = this.width;
+                ctx.stroke();
+            }
+        }
+
+        // Instancias
+        const core = new Core();
+        let sparks = [];
+        let shockwaves = [];
+
+        function spawnParticles(amount) {
+            for(let i=0; i<amount; i++) particles.push(new Particle());
+        }
+
+        function createSparks(x, y, count, color) {
+            for(let i=0; i<count; i++) sparks.push(new Spark(x, y, color));
+        }
+
+        function createShockwave(x, y, isMajor) {
+            shockwaves.push(new Shockwave(x, y, isMajor));
+        }
+
+        function createRipple(x, y) {
+            ripples.push({x, y, r: 1, a: 1});
+        }
+
+        /**
+         * BUCLE DE ANIMACIÓN
+         */
+        function animate() {
+            if (!gameRunning) return;
+            requestAnimationFrame(animate);
+
+            ctx.fillStyle = 'rgba(5, 5, 10, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.globalCompositeOperation = 'lighter';
+
+            core.draw();
+
+            // Dibujar Partículas
+            ctx.lineWidth = 0.5;
+            for(let i=0; i<particles.length; i++) {
+                const p = particles[i];
+                // Actualizamos colores de partículas viejas si cambia el mundo
+                // (Opcional: podemos dejar que mueran con el color viejo para transición suave)
+                // Pero para uniformidad, forzamos re-init de color a veces o solo en nuevas
+                
+                p.update();
+                p.draw();
+                
+                // Conexiones
+                if (i % 2 === 0) { 
+                    for(let j=i+1; j<particles.length; j+=4) {
+                        const p2 = particles[j];
+                        const dx = p.x - p2.x;
+                        const dy = p.y - p2.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = `rgba(255,255,255, ${0.1 * (1 - dist/100)})`;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            for(let i=sparks.length-1; i>=0; i--) {
+                const s = sparks[i];
+                s.update();
+                s.draw();
+                if(s.life <= 0) sparks.splice(i, 1);
+            }
+
+            for(let i=shockwaves.length-1; i>=0; i--) {
+                const sw = shockwaves[i];
+                sw.update();
+                sw.draw();
+                if(sw.alpha <= 0) shockwaves.splice(i, 1);
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+            
+            for(let i=ripples.length-1; i>=0; i--) {
+                const r = ripples[i];
+                r.r += 3;
+                r.a -= 0.03;
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.r, 0, Math.PI*2);
+                ctx.strokeStyle = `rgba(100, 255, 255, ${r.a})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                if(r.a <= 0) ripples.splice(i, 1);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
