@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Secuencia - Juego de Memoria de Voz</title>
+    <!-- Incluyendo Tailwind CSS para un diseño minimalista y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para el juego */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Fondo oscuro, estilo GitHub Dark */
+        }
+        .game-button {
+            /* Estilo base para los botones del juego */
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .game-button:active {
+            transform: scale(0.95);
+            box-shadow: none;
+        }
+
+        /* Clase para el efecto visual de "flash" cuando el juego presenta la secuencia */
+        .flashing {
+            animation: flash 0.5s ease-in-out;
+            box-shadow: 0 0 40px var(--flash-color); /* Sombra de color para inmersión */
+            opacity: 1 !important;
+        }
+
+        @keyframes flash {
+            0% { opacity: 0.5; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Deshabilitar interacción durante la reproducción de la secuencia */
+        .input-disabled .game-button {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Estilo para el botón de inicio */
+        #start-button {
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(100, 255, 100, 0.5);
+            font-weight: bold;
+        }
+
+        #start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(100, 255, 100, 0.7);
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-lg bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl text-white flex flex-col items-center">
+
+        <!-- Área de Estado y Título -->
+        <header class="text-center mb-6 w-full">
+            <h1 class="text-3xl font-bold text-green-400 mb-2">Eco-Secuencia 🔊</h1>
+            <p class="text-lg text-gray-400">Repite la secuencia de luces y voces.</p>
+            <div id="status-area" class="mt-4 p-3 rounded-xl bg-gray-700 font-semibold text-xl transition duration-500 min-h-[50px]">
+                Presiona "Iniciar" para comenzar.
+            </div>
+        </header>
+
+        <!-- Contenedor del Tablero de Juego (4x1 Grid) -->
+        <div id="game-board" class="grid grid-cols-2 gap-4 w-full aspect-square max-w-sm mx-auto input-disabled">
+            <!-- Botón Rojo -->
+            <div id="red" data-color="rojo" data-emoji="🔴" data-flash-color="#ef4444"
+                 class="game-button bg-red-600/30 hover:bg-red-600 text-red-400" onclick="handleInput('rojo')">
+                🔴
+            </div>
+
+            <!-- Botón Azul -->
+            <div id="blue" data-color="azul" data-emoji="🔵" data-flash-color="#3b82f6"
+                 class="game-button bg-blue-600/30 hover:bg-blue-600 text-blue-400" onclick="handleInput('azul')">
+                🔵
+            </div>
+
+            <!-- Botón Verde -->
+            <div id="green" data-color="verde" data-emoji="🟢" data-flash-color="#10b981"
+                 class="game-button bg-green-600/30 hover:bg-green-600 text-green-400" onclick="handleInput('verde')">
+                🟢
+            </div>
+
+            <!-- Botón Amarillo -->
+            <div id="yellow" data-color="amarillo" data-emoji="🟡" data-flash-color="#f59e0b"
+                 class="game-button bg-yellow-600/30 hover:bg-yellow-600 text-yellow-400" onclick="handleInput('amarillo')">
+                🟡
+            </div>
+        </div>
+
+        <!-- Controles de Nivel y Botón de Inicio -->
+        <div class="mt-8 w-full flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div class="p-3 bg-gray-700 rounded-xl w-full sm:w-auto text-center">
+                <p class="text-sm text-gray-400">Mundo / Nivel</p>
+                <p id="level-display" class="text-3xl font-extrabold text-white">0</p>
+            </div>
+
+            <button id="start-button"
+                class="px-8 py-4 bg-green-500 text-gray-900 rounded-xl text-lg w-full sm:w-auto hover:bg-green-400 active:bg-green-600"
+                onclick="initGame()">
+                Iniciar Juego
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Configuración de la API de Voz (Web Speech Synthesis)
+        const synth = window.speechSynthesis;
+        const Utterance = window.SpeechSynthesisUtterance;
+        const voiceLanguage = 'es-ES';
+
+        // Estado del Juego
+        let gameState = {
+            isRunning: false,
+            level: 0,
+            sequence: [], // Secuencia generada por el juego (ej: ['rojo', 'azul', 'rojo'])
+            userSequence: [], // Secuencia introducida por el usuario
+            isUserTurn: false,
+            timeoutId: null,
+            flashDuration: 500, // Duración del flash visual
+            delayBetweenFlashes: 700, // Pausa entre elementos de la secuencia
+            gameColors: ['rojo', 'azul', 'verde', 'amarillo'],
+        };
+
+        // Referencias del DOM
+        const board = document.getElementById('game-board');
+        const statusArea = document.getElementById('status-area');
+        const levelDisplay = document.getElementById('level-display');
+        const startButton = document.getElementById('start-button');
+        const colorButtons = Array.from(document.querySelectorAll('.game-button'));
+
+        // --- FUNCIONES DE VOZ ---
+
+        /**
+         * Función genérica para que el navegador hable un texto.
+         * @param {string} text - El texto a decir.
+         * @param {number} pitch - Tono de voz (0 a 2).
+         * @param {number} rate - Velocidad de voz (0.1 a 10).
+         */
+        function speak(text, pitch = 1.0, rate = 1.0) {
+            if (!synth) {
+                console.error("El navegador no soporta la API de Voz.");
+                statusArea.textContent = "Error: Tu navegador no soporta la API de Voz.";
+                return;
+            }
+
+            const utterance = new Utterance(text);
+            utterance.lang = voiceLanguage;
+            utterance.pitch = pitch;
+            utterance.rate = rate;
+
+            // Intenta encontrar una voz en español
+            const spanishVoice = synth.getVoices().find(voice => voice.lang.startsWith('es-'));
+            if (spanishVoice) {
+                utterance.voice = spanishVoice;
+            }
+
+            synth.speak(utterance);
+        }
+
+        // --- LÓGICA DEL JUEGO ---
+
+        /**
+         * Inicializa o reinicia el juego.
+         */
+        function initGame() {
+            // Detener cualquier reproducción de voz anterior
+            synth.cancel();
+
+            // Limpiar timeouts pendientes
+            if (gameState.timeoutId) {
+                clearTimeout(gameState.timeoutId);
+            }
+
+            gameState.isRunning = true;
+            gameState.level = 0;
+            gameState.sequence = [];
+            gameState.userSequence = [];
+            gameState.isUserTurn = false;
+
+            startButton.textContent = 'JUGANDO...';
+            startButton.disabled = true;
+            startButton.classList.remove('bg-green-500', 'hover:bg-green-400');
+            startButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+
+            updateStatus('¡Comenzando el juego!');
+            speak('Comenzando el juego. ¡Escucha con atención!', 1.2);
+
+            // Iniciar el primer nivel después de un breve retraso para la introducción de voz
+            setTimeout(nextLevel, 2000);
+        }
+
+        /**
+         * Avanza al siguiente nivel.
+         */
+        function nextLevel() {
+            gameState.level++;
+            gameState.userSequence = [];
+            gameState.isUserTurn = false;
+
+            levelDisplay.textContent = gameState.level;
+            updateStatus(`Mundo ${gameState.level}. Generando secuencia...`);
+
+            // Añadir un nuevo color aleatorio a la secuencia
+            const randomColor = gameState.gameColors[Math.floor(Math.random() * gameState.gameColors.length)];
+            gameState.sequence.push(randomColor);
+
+            // Deshabilitar la entrada del usuario mientras se reproduce la secuencia
+            board.classList.add('input-disabled');
+
+            // Reproducir la nueva secuencia
+            speak(`Secuencia para el mundo ${gameState.level}`, 1.0);
+            gameState.timeoutId = setTimeout(() => playSequence(0), 1500);
+        }
+
+        /**
+         * Reproduce la secuencia de luces y sonidos.
+         * @param {number} index - Índice actual de la secuencia a reproducir.
+         */
+        function playSequence(index) {
+            if (index >= gameState.sequence.length) {
+                // Secuencia terminada, es el turno del usuario
+                gameState.isUserTurn = true;
+                board.classList.remove('input-disabled'); // Habilitar entrada
+                updateStatus('¡Tu turno! Repite la secuencia.');
+                speak('Tu turno.', 1.0);
+                return;
+            }
+
+            const colorToFlash = gameState.sequence[index];
+            const button = document.querySelector(`[data-color="${colorToFlash}"]`);
+            const emoji = button.dataset.emoji;
+            const flashColor = button.dataset.flashColor;
+
+            // 1. Efecto Visual (Flash)
+            button.classList.add('flashing');
+            button.style.setProperty('--flash-color', flashColor);
+
+            // 2. Efecto de Audio (Voz)
+            speak(colorToFlash, 1.5, 1.2); // Voz más aguda y rápida para inmersión
+
+            // Retirar el flash después de la duración y programar el siguiente elemento
+            gameState.timeoutId = setTimeout(() => {
+                button.classList.remove('flashing');
+
+                // Pausa antes del siguiente flash
+                gameState.timeoutId = setTimeout(() => {
+                    playSequence(index + 1);
+                }, gameState.delayBetweenFlashes - gameState.flashDuration);
+
+            }, gameState.flashDuration);
+        }
+
+
+        /**
+         * Maneja la entrada del usuario al hacer clic en un botón.
+         * @param {string} color - El color (palabra) seleccionado por el usuario.
+         */
+        function handleInput(color) {
+            if (!gameState.isRunning || !gameState.isUserTurn) return;
+
+            // Efecto visual/auditivo inmediato de la pulsación
+            const button = document.querySelector(`[data-color="${color}"]`);
+            const emoji = button.dataset.emoji;
+            speak(color, 1.5, 1.5); // Feedback de voz para el botón pulsado
+            updateStatus(`Seleccionaste: ${emoji}`);
+
+            gameState.userSequence.push(color);
+            const inputIndex = gameState.userSequence.length - 1;
+
+            // 1. Comprobar si el último elemento es correcto
+            if (gameState.userSequence[inputIndex] !== gameState.sequence[inputIndex]) {
+                // Incorrecto
+                gameOver();
+                return;
+            }
+
+            // 2. Si es correcto, comprobar si la secuencia ha terminado
+            if (gameState.userSequence.length === gameState.sequence.length) {
+                // Secuencia completada correctamente
+                updateStatus('✅ ¡Correcto! Preparando el siguiente Mundo...');
+                speak('¡Correcto! Siguiente nivel.', 1.0);
+                
+                // Deshabilitar la entrada y pasar al siguiente nivel
+                gameState.isUserTurn = false;
+                board.classList.add('input-disabled');
+                
+                // Esperar 2 segundos antes de iniciar el siguiente nivel
+                gameState.timeoutId = setTimeout(nextLevel, 2000);
+            }
+        }
+
+        /**
+         * Termina el juego.
+         */
+        function gameOver() {
+            gameState.isRunning = false;
+            gameState.isUserTurn = false;
+            board.classList.add('input-disabled'); // Deshabilitar entrada
+
+            speak(`Juego terminado. Llegaste al mundo ${gameState.level}. Inténtalo de nuevo.`, 0.8, 0.9);
+            updateStatus(`❌ ¡Juego Terminado! Llegaste al Mundo ${gameState.level}.`);
+
+            startButton.textContent = 'REINICIAR JUEGO';
+            startButton.disabled = false;
+            startButton.classList.remove('bg-gray-500', 'cursor-not-allowed');
+            startButton.classList.add('bg-green-500', 'hover:bg-green-400');
+        }
+
+        /**
+         * Actualiza el área de estado con el mensaje dado.
+         * @param {string} message - Mensaje a mostrar.
+         */
+        function updateStatus(message) {
+            statusArea.textContent = message;
+        }
+
+        // --- INICIALIZACIÓN ---
+
+        // Configuración inicial al cargar la ventana
+        window.onload = () => {
+             // Pequeña corrección visual en caso de que las voces tarden en cargar
+             synth.onvoiceschanged = () => {
+                console.log("Voces de síntesis de voz cargadas.");
+             };
+             // Mensaje inicial para el usuario
+             updateStatus('Presiona "Iniciar Juego" para empezar la aventura multisensorial.');
+        };
+
+    </script>
+</body>
+</html>
