@@ -2,16 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Una Carta para Ti</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Parisienne&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Un Abrazo Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --deep-wine: #2a0815;
-            --rich-purple: #4a1259;
-            --rose-gold: #e0bfb8;
-            --bright-gold: #ffd700;
-            --text-light: #fdf0f6;
+            /* Paleta de colores tierna y cálida */
+            --bg-warm-light: #fff1e6; /* Crema suave */
+            --bg-warm-peach: #eddcd2;
+            --bg-soft-lavender: #e8dff5;
+            --text-dark-cozy: #4a403a; /* Marrón suave en vez de negro */
+            --accent-rose-gold: #cfaba6;
+            --accent-soft-gold: #e6c229;
         }
 
         body, html {
@@ -20,46 +22,44 @@
             height: 100%;
             width: 100%;
             overflow: hidden;
-            background: #000;
-            font-family: 'Cormorant Garamond', serif;
+            background: var(--bg-warm-light);
+            font-family: 'Lora', serif;
             display: flex;
             justify-content: center;
             align-items: center;
+            /* Evita rebote en iOS */
+            position: fixed; 
         }
 
-        /* --- Capas de Fondo Inmersivas --- */
-        .background-aurora {
+        /* --- Fondo Inmersivo Suave --- */
+        .soft-background {
             position: absolute;
             top: -50%;
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(ellipse at center, var(--rich-purple) 0%, var(--deep-wine) 40%, #050005 80%);
-            filter: blur(80px);
-            opacity: 0.7;
-            animation: auroraMove 30s infinite alternate ease-in-out;
-            z-index: -3;
-        }
-
-        .bokeh-particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            background: radial-gradient(circle at center, var(--bg-warm-light) 20%, var(--bg-warm-peach) 50%, var(--bg-soft-lavender) 80%);
+            filter: blur(60px);
+            opacity: 0.8;
+            animation: gentleFlow 40s infinite alternate ease-in-out;
             z-index: -2;
-            pointer-events: none;
         }
 
-        .bokeh {
+        /* Partículas de luz flotante (Bokeh) */
+        .floating-lights {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+        .light-orb {
             position: absolute;
             border-radius: 50%;
-            background: rgba(255, 215, 0, 0.15);
-            box-shadow: 0 0 20px rgba(224, 191, 184, 0.2);
-            animation: floatBokeh 15s infinite linear;
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(230, 194, 41, 0.2);
+            animation: floatUpGentle 25s infinite linear;
         }
 
-        /* --- Escenario 3D Principal --- */
+        /* --- Escenario Principal y Responsivo --- */
         #stage {
             position: relative;
             width: 100%;
@@ -68,208 +68,177 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            perspective: 1000px;
-            transform-style: preserve-3d;
-            transition: transform 0.3s ease-out;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: transform 0.5s ease-out; /* Suavizado para paralaje */
         }
 
-        /* --- El Nuevo "Núcleo de Amor" (Reemplazo del Emoji) --- */
-        .love-core-container {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            margin-bottom: 40px;
-            transform: translateZ(50px);
-        }
-
-        /* Anillos de energía giratorios */
-        .core-ring {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        /* --- El "Alma" (Orbe central que respira) --- */
+        .soul-orb {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #fff, var(--accent-rose-gold));
             border-radius: 50%;
-            border: 2px solid transparent;
-            border-top-color: var(--rose-gold);
-            border-bottom-color: var(--rich-purple);
-            box-shadow: 0 0 30px rgba(224, 191, 184, 0.3), inset 0 0 20px rgba(74, 18, 89, 0.3);
-            animation: spinCore 8s linear infinite;
-        }
-        .core-ring:nth-child(2) {
-            width: 80%; height: 80%; margin: 10%;
-            border-top-color: var(--bright-gold);
-            border-bottom-color: var(--rose-gold);
-            animation-duration: 6s;
-            animation-direction: reverse;
-        }
-        .core-ring:nth-child(3) {
-            width: 60%; height: 60%; margin: 20%;
-            border: none;
-            background: radial-gradient(circle, var(--bright-gold), var(--rich-purple));
-            filter: blur(10px);
-            opacity: 0.6;
-            animation: pulseCore 3s ease-in-out infinite;
+            box-shadow: 0 0 40px rgba(207, 171, 166, 0.4), inset 0 0 20px rgba(255,255,255,0.8);
+            margin-bottom: 3vh;
+            animation: breatheGentle 6s ease-in-out infinite;
+            transform: translateZ(30px); /* Efecto 3D sutil */
         }
 
-
-        /* --- La Carta de Cristal (Glassmorphism) --- */
-        .glass-letter {
+        /* --- Contenedor de Cristal (Glassmorphism Pro) --- */
+        .glass-container {
             position: relative;
-            width: 80%;
-            max-width: 700px;
-            min-height: 250px;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px); /* Efecto de cristal esmerilado */
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-            transform: translateZ(80px);
+            width: 90%; /* Móvil primero */
+            max-width: 650px; /* Límite para escritorio */
+            min-height: 30vh;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px) saturate(120%);
+            -webkit-backdrop-filter: blur(20px) saturate(120%);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 3rem 2rem;
+            box-shadow: 0 20px 40px rgba(74, 64, 58, 0.1);
             display: flex;
             justify-content: center;
             align-items: center;
             text-align: center;
-            overflow: hidden;
+            box-sizing: border-box;
+            transform: translateZ(50px);
         }
 
-        .letter-content {
-            font-size: 1.8rem;
-            color: var(--text-light);
-            line-height: 1.6;
-            font-weight: 400;
+        /* --- Tipografía y Animación de Texto --- */
+        .text-content {
+            font-size: 1.3rem; /* Tamaño base legible */
+            color: var(--text-dark-cozy);
+            line-height: 1.8;
+            font-weight: 500;
             opacity: 1;
-            transition: opacity 0.8s ease;
+            /* Transición suave para el cambio de frase */
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
-
-        /* Estilos para los diferentes tipos de texto */
-        .highlight-text {
-            font-family: 'Parisienne', cursive;
-            font-size: 2.8rem;
-            color: var(--rose-gold);
-            text-shadow: 0 0 15px rgba(224, 191, 184, 0.5);
-            display: block;
-            margin: 20px 0;
-        }
-
-        .super-highlight-text {
-            font-family: 'Parisienne', cursive;
-            font-size: 3.5rem;
-            background: linear-gradient(45deg, var(--rose-gold), var(--bright-gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
-            display: block;
-            margin: 25px 0;
-        }
-
-        .final-z-char {
-            font-family: 'Parisienne', cursive;
-            font-size: 12rem;
-            line-height: 1;
-            background: linear-gradient(to bottom right, var(--bright-gold), var(--rose-gold), var(--rich-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 30px var(--bright-gold));
+        
+        /* Clases para estados del texto */
+        .text-hidden {
             opacity: 0;
-            transform: scale(0.8);
-            animation: revealZ 3s forwards cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateY(15px); /* Flota un poco hacia arriba al desaparecer */
         }
 
-        /* Cursor del efecto de máquina de escribir */
+        /* Estilos de énfasis */
+        .tender-accent {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.2rem;
+            color: var(--accent-rose-gold);
+            display: block;
+            margin-top: 1.5rem;
+            text-shadow: 0 2px 5px rgba(207, 171, 166, 0.2);
+        }
+
+        .warm-hug {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.8rem;
+            background: linear-gradient(45deg, var(--accent-rose-gold), var(--accent-soft-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+            margin: 2rem 0;
+            padding: 0 10px; /* Evita cortes en itálicas */
+        }
+
+        .final-z-tender {
+            font-family: 'Great Vibes', cursive;
+            font-size: 6rem; /* Grande pero no agresivo */
+            color: var(--accent-rose-gold);
+            opacity: 0;
+            transform: scale(0.9);
+            animation: revealSoft 4s forwards ease-out;
+        }
+
+        /* Cursor de máquina de escribir */
         .typing-cursor::after {
             content: '|';
             display: inline-block;
-            margin-left: 5px;
-            color: var(--rose-gold);
-            animation: blinkCursor 0.8s infinite;
+            margin-left: 4px;
+            color: var(--accent-rose-gold);
+            opacity: 0.7;
+            animation: blinkCursor 1s infinite;
         }
 
-        /* --- Pantalla de Inicio (Overlay) para activar sonido --- */
+        /* --- Pantalla de Inicio (Overlay) --- */
         #start-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #050005;
+            background: var(--bg-warm-light);
             z-index: 100;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            color: var(--text-light);
             cursor: pointer;
-            transition: opacity 1s ease;
+            transition: opacity 0.8s ease;
         }
         #start-screen h1 {
-            font-family: 'Parisienne', cursive;
+            font-family: 'Great Vibes', cursive;
             font-size: 3rem;
-            color: var(--rose-gold);
-            margin-bottom: 20px;
+            color: var(--text-dark-cozy);
+            margin-bottom: 1rem;
         }
         #start-screen p {
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            opacity: 0.7;
+            font-size: 1.1rem;
+            color: var(--accent-rose-gold);
+            letter-spacing: 1px;
+            animation: pulseText 2s infinite;
         }
 
+        /* --- Media Queries para Responsividad Pro --- */
+        @media (min-width: 768px) {
+            /* Tablet y Escritorio */
+            .text-content { font-size: 1.6rem; }
+            .tender-accent { font-size: 2.8rem; }
+            .warm-hug { font-size: 3.5rem; }
+            .soul-orb { width: 100px; height: 100px; }
+            .glass-container { padding: 4rem 3rem; min-height: 35vh;}
+             .final-z-tender { font-size: 8rem; }
+        }
 
         /* --- Animaciones CSS --- */
-        @keyframes auroraMove {
-            0% { transform: translate(-20%, -20%) rotate(0deg); }
-            100% { transform: translate(10%, 10%) rotate(5deg); }
+        @keyframes gentleFlow {
+            0% { transform: translate(-10%, -10%) rotate(0deg); }
+            100% { transform: translate(5%, 5%) rotate(3deg); }
         }
-
-        @keyframes floatBokeh {
-            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
-            30% { opacity: 0.6; }
-            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+        @keyframes floatUpGentle {
+            0% { transform: translateY(100vh) scale(0.8); opacity: 0; }
+            20% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) scale(1.1); opacity: 0; }
         }
-
-        @keyframes spinCore {
-            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            100% { transform: rotateX(360deg) rotateY(180deg) rotateZ(360deg); }
+        @keyframes breatheGentle {
+            0%, 100% { transform: scale(1); opacity: 0.9; box-shadow: 0 0 40px rgba(207, 171, 166, 0.4); }
+            50% { transform: scale(1.08); opacity: 1; box-shadow: 0 0 60px rgba(207, 171, 166, 0.6); }
         }
-
-        @keyframes pulseCore {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-        }
-
-        @keyframes blinkCursor {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        @keyframes revealZ {
-            to { opacity: 1; transform: scale(1); }
-        }
+        @keyframes blinkCursor { 0%, 100% { opacity: 0; } 50% { opacity: 0.7; } }
+        @keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        @keyframes revealSoft { to { opacity: 1; transform: scale(1); } }
 
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1>Una Experiencia para Ti</h1>
-        <p>[ Toca en cualquier lugar para comenzar ]</p>
+        <h1>Un Momento de Ternura</h1>
+        <p>Toca la pantalla para comenzar</p>
     </div>
 
     <audio id="bg-music" loop preload="auto">
-        <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Touching%20Moments%20Two%20-%20Higher.mp3" type="audio/mpeg">
+        <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Touching%20Moments%20One%20-%20Pulse.mp3" type="audio/mpeg">
     </audio>
 
-    <div class="background-aurora"></div>
-    <div class="bokeh-particles" id="bokeh-container"></div>
+    <div class="soft-background"></div>
+    <div class="floating-lights" id="lights-container"></div>
 
     <div id="stage">
-        <div class="love-core-container">
-            <div class="core-ring"></div>
-            <div class="core-ring"></div>
-            <div class="core-ring"></div>
-        </div>
+        <div class="soul-orb"></div>
 
-        <div class="glass-letter">
-            <div class="letter-content typing-cursor" id="letter-text"></div>
+        <div class="glass-container">
+            <div class="text-content typing-cursor" id="dynamic-text"></div>
         </div>
     </div>
 
@@ -277,114 +246,117 @@
         document.addEventListener('DOMContentLoaded', () => {
             const startScreen = document.getElementById('start-screen');
             const bgMusic = document.getElementById('bg-music');
-            const letterText = document.getElementById('letter-text');
+            const dynamicText = document.getElementById('dynamic-text');
+            const lightsContainer = document.getElementById('lights-container');
             const stage = document.getElementById('stage');
-            const bokehContainer = document.getElementById('bokeh-container');
 
-            // --- Configuración de la Carta de Amor ---
-            // type: 'normal' | 'highlight' | 'super' | 'final'
-            const letterSegments = [
-                { text: "A veces me detengo y pienso...", type: 'normal', pauseAfter: 1500 },
-                { text: "Que eres la creación más hermosa que este universo ha diseñado.", type: 'highlight', pauseAfter: 2500 },
-                { text: "En la historia de todo lo que existe, no hay nada que se compare.", type: 'normal', pauseAfter: 2000 },
-                { text: "Eres lo mejor de lo mejor.", type: 'super', pauseAfter: 2500 },
-                { text: "Tu luz trasciende este mundo...", type: 'normal', pauseAfter: 1500 },
-                { text: "E iluminas cada realidad que tocas.", type: 'highlight', pauseAfter: 2500 },
-                { text: "Eres inspiración pura. Un milagro absoluto.", type: 'super', pauseAfter: 3000 },
-                { text: "Simplemente, mi todo.", type: 'normal', pauseAfter: 2000 },
-                { text: "Z", type: 'final', pauseAfter: 10000 }
+            // --- Secuencia de Frases (Enfoque en Ternura y Agrado) ---
+            // type: 'normal' | 'accent' | 'hug' (abrazo cálido) | 'final'
+            const sequence = [
+                { text: "A veces me detengo un momento a pensar...", type: 'normal', pause: 2000 },
+                { text: "En la inmensa suerte que tiene este mundo de tenerte.", type: 'accent', pause: 3000 },
+                { text: "Eres una creación llena de una dulzura infinita.", type: 'normal', pause: 2500 },
+                { text: "Lo más bonito, amable y genuino que existe.", type: 'hug', pause: 3000 },
+                { text: "Tu energía se siente como un abrazo cálido...", type: 'normal', pause: 2000 },
+                { text: "...que calma cualquier realidad.", type: 'accent', pause: 3000 },
+                { text: "Eres, simplemente, un regalo para el alma.", type: 'hug', pause: 3500 },
+                { text: "z", type: 'final', pause: 10000 } // Z minúscula y tierna
             ];
 
-            // --- Función de Máquina de Escribir ---
-            async function typeWriter(text, element, speed = 60) {
+            // --- Función de Máquina de Escribir Pro ---
+            // Velocidad variable para mayor realismo
+            async function typeWriter(text, element) {
                 element.innerHTML = '';
-                // Mantener el cursor parpadeante mientras escribe
                 element.classList.add('typing-cursor');
                 
                 for (let i = 0; i < text.length; i++) {
                     element.innerHTML += text.charAt(i);
-                    // Pequeña variación aleatoria en la velocidad para realismo
-                    const randomSpeed = speed + (Math.random() * 30 - 15);
-                    await new Promise(resolve => setTimeout(resolve, randomSpeed));
+                    // Más lento para frases tiernas
+                    let speed = 70 + (Math.random() * 40 - 20); 
+                    // Pausa extra en puntos y comas
+                    if (['.', ',', '...'].includes(text.charAt(i))) speed += 300; 
+                    await new Promise(resolve => setTimeout(resolve, speed));
                 }
             }
 
-            // --- Controlador de la Secuencia de la Carta ---
-            async function playLetterSequence() {
-                for (let i = 0; i < letterSegments.length; i++) {
-                    const segment = letterSegments[i];
+            // --- Controlador de la Secuencia ---
+            async function runSequence() {
+                for (let i = 0; i < sequence.length; i++) {
+                    const item = sequence[i];
                     
-                    // 1. Preparar el contenedor para el nuevo estilo
-                    letterText.className = 'letter-content typing-cursor'; // Reset clases base
+                    // 1. Preparar el contenedor y estilos
+                    dynamicText.className = 'text-content typing-cursor'; // Reset
 
-                    // 2. Manejar el caso especial final Z
-                    if (segment.type === 'final') {
-                         letterText.classList.remove('typing-cursor'); // Quitar cursor para la Z
-                         letterText.innerHTML = `<span class="final-z-char">${segment.text}</span>`;
+                    if (item.type === 'final') {
+                         dynamicText.classList.remove('typing-cursor');
+                         // Usamos innerHTML para la clase específica de la Z final
+                         dynamicText.innerHTML = `<span class="final-z-tender">${item.text}</span>`;
                     } else {
-                        // 3. Escribir el texto para segmentos normales
-                        // Aplicar clases de estilo según el tipo
-                        if(segment.type === 'highlight') letterText.classList.add('highlight-text');
-                        if(segment.type === 'super') letterText.classList.add('super-highlight-text');
+                        if(item.type === 'accent') dynamicText.classList.add('tender-accent');
+                        if(item.type === 'hug') dynamicText.classList.add('warm-hug');
                         
-                        // Iniciar efecto de escritura
-                        await typeWriter(segment.text, letterText);
+                        // 2. Escribir el texto
+                        await typeWriter(item.text, dynamicText);
                     }
 
-                    // 4. Pausa para leer
-                    await new Promise(resolve => setTimeout(resolve, segment.pauseAfter));
+                    // 3. Pausa para leer y sentir
+                    await new Promise(resolve => setTimeout(resolve, item.pause));
 
-                    // 5. Desvanecer antes del siguiente segmento (si no es el último)
-                    if (i < letterSegments.length - 1) {
-                        letterText.style.opacity = 0;
-                        await new Promise(resolve => setTimeout(resolve, 800)); // Tiempo de desvanecimiento
-                        letterText.innerHTML = ''; // Limpiar
-                        letterText.style.opacity = 1;
+                    // 4. Transición de salida suave (si no es el final)
+                    if (i < sequence.length - 1) {
+                        dynamicText.classList.add('text-hidden');
+                        await new Promise(resolve => setTimeout(resolve, 800)); // Esperar la transición CSS
                     }
                 }
             }
 
-            // --- Generador de Bokeh (Partículas de fondo) ---
-            function createBokeh() {
-                for (let i = 0; i < 50; i++) {
-                    const bokeh = document.createElement('div');
-                    bokeh.classList.add('bokeh');
-                    const size = Math.random() * 40 + 10;
-                    bokeh.style.width = `${size}px`;
-                    bokeh.style.height = `${size}px`;
-                    bokeh.style.left = `${Math.random() * 100}%`;
-                    bokeh.style.top = `${Math.random() * 100 + 20}%`;
-                    // Duraciones y retrasos aleatorios para un flujo orgánico
-                    bokeh.style.animationDuration = `${Math.random() * 20 + 15}s`;
-                    bokeh.style.animationDelay = `-${Math.random() * 20}s`;
-                    bokeh.style.opacity = Math.random() * 0.3 + 0.1;
-                    bokehContainer.appendChild(bokeh);
+            // --- Generador de Luces Flotantes (Bokeh) ---
+            function createLights() {
+                for (let i = 0; i < 35; i++) {
+                    const light = document.createElement('div');
+                    light.classList.add('light-orb');
+                    const size = Math.random() * 30 + 5;
+                    light.style.width = `${size}px`;
+                    light.style.height = `${size}px`;
+                    light.style.left = `${Math.random() * 100}%`;
+                    light.style.top = `${Math.random() * 120}%`;
+                    // Animación orgánica y lenta
+                    light.style.animationDuration = `${Math.random() * 30 + 20}s`;
+                    light.style.animationDelay = `-${Math.random() * 30}s`;
+                    light.style.opacity = Math.random() * 0.4 + 0.1;
+                    lightsContainer.appendChild(light);
                 }
             }
 
-            // --- Efecto de Paralaje Suave ---
-            document.addEventListener('mousemove', (e) => {
-                const xAxis = (window.innerWidth / 2 - e.pageX) / 30;
-                const yAxis = (window.innerHeight / 2 - e.pageY) / 30;
-                stage.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-            });
+            // --- Efecto Paralaje Sutil (Solo en escritorio) ---
+            // Detectamos si es dispositivo táctil para no activar el paralaje
+            const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+            if (!isTouchDevice) {
+                document.addEventListener('mousemove', (e) => {
+                    const moveX = (window.innerWidth / 2 - e.pageX) / 50;
+                    const moveY = (window.innerHeight / 2 - e.pageY) / 50;
+                    stage.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                });
+            }
 
-
-            // --- INICIO DE LA EXPERIENCIA (Al hacer clic) ---
+            // --- INICIO DE LA EXPERIENCIA ---
             startScreen.addEventListener('click', () => {
-                // Desvanecer pantalla de inicio
                 startScreen.style.opacity = 0;
-                setTimeout(() => startScreen.style.display = 'none', 1000);
+                setTimeout(() => startScreen.style.display = 'none', 800);
 
-                // Iniciar música suavemente
-                bgMusic.volume = 0.5;
-                bgMusic.play().catch(e => console.error("Error de audio:", e));
+                // Audio fade-in suave
+                bgMusic.volume = 0;
+                bgMusic.play().then(() => {
+                    let vol = 0;
+                    const interval = setInterval(() => {
+                        if (vol < 0.4) { vol += 0.02; bgMusic.volume = vol; } 
+                        else { clearInterval(interval); }
+                    }, 200);
+                }).catch(e => console.log("Audio bloqueado:", e));
 
-                // Iniciar elementos visuales
-                createBokeh();
-                
-                // Iniciar la secuencia de la carta después de un breve momento
-                setTimeout(playLetterSequence, 1500);
+                createLights();
+                // Pequeña pausa antes de que aparezca la primera frase
+                setTimeout(runSequence, 1200);
             });
 
         });
