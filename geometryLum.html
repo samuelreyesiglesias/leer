@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Geometría Lúmina - Juego Cognitivo</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(120deg, #0a0f24, #1b2848);
+        color: white;
+        overflow: hidden;
+        user-select: none;
+    }
+
+    #header {
+        padding: 10px;
+        background: rgba(255,255,255,0.1);
+        display: flex;
+        justify-content: space-between;
+        font-size: 20px;
+    }
+
+    #gameArea {
+        position: relative;
+        width: 100vw;
+        height: 90vh;
+        overflow: hidden;
+    }
+
+    .shape {
+        position: absolute;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .shape:hover {
+        transform: scale(1.2);
+    }
+
+    /* Círculo */
+    .circle {
+        width: 50px;
+        height: 50px;
+        background: #00f0ff;
+        border-radius: 50%;
+        animation: float 4s infinite ease-in-out;
+    }
+
+    /* Cuadrado */
+    .square {
+        width: 50px;
+        height: 50px;
+        background: #ff9500;
+        animation: float 3.5s infinite ease-in-out;
+    }
+
+    /* Triángulo */
+    .triangle {
+        width: 0;
+        height: 0;
+        border-left: 25px solid transparent;
+        border-right: 25px solid transparent;
+        border-bottom: 50px solid #ff2d55;
+        animation: float 5s infinite ease-in-out;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
+    }
+
+    #message {
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 40px;
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+<div id="header">
+    <div>Nivel: <span id="level">1</span></div>
+    <div>Objetivo: <span id="target">Círculo</span></div>
+    <div>Puntos: <span id="score">0</span></div>
+    <div>Vidas: <span id="lives">3</span></div>
+</div>
+
+<div id="gameArea"></div>
+
+<div id="message"></div>
+
+<script>
+const gameArea = document.getElementById("gameArea");
+let level = 1;
+let score = 0;
+let lives = 3;
+
+const shapes = ["circle", "square", "triangle"];
+
+function randomPosition(max) {
+    return Math.floor(Math.random() * (max - 60));
+}
+
+function showMessage(text, color) {
+    const msg = document.getElementById("message");
+    msg.innerText = text;
+    msg.style.color = color;
+    msg.style.display = "block";
+    setTimeout(() => (msg.style.display = "none"), 1000);
+}
+
+function spawnShapes() {
+    gameArea.innerHTML = "";
+    const numShapes = 4 + level;
+
+    const target = shapes[(level - 1) % shapes.length];
+    document.getElementById("target").innerText =
+        target === "circle" ? "Círculo" :
+        target === "square" ? "Cuadrado" :
+        "Triángulo";
+
+    for (let i = 0; i < numShapes; i++) {
+        const shape = document.createElement("div");
+        const type = shapes[Math.floor(Math.random() * shapes.length)];
+        shape.classList.add("shape", type);
+
+        shape.style.left = randomPosition(window.innerWidth) + "px";
+        shape.style.top = randomPosition(window.innerHeight) + "px";
+
+        shape.onclick = () => handleClick(type, target);
+
+        gameArea.appendChild(shape);
+    }
+}
+
+function handleClick(clicked, target) {
+    if (clicked === target) {
+        score += 10;
+        document.getElementById("score").innerText = score;
+        showMessage("¡Bien hecho!", "lightgreen");
+
+        if (score >= level * 50) {
+            level++;
+            document.getElementById("level").innerText = level;
+        }
+    } else {
+        lives--;
+        document.getElementById("lives").innerText = lives;
+        showMessage("Fallaste", "red");
+
+        if (lives <= 0) {
+            alert("¡Juego terminado! Puntuación: " + score);
+            location.reload();
+        }
+    }
+
+    spawnShapes();
+}
+
+spawnShapes();
+</script>
+
+</body>
+</html>
