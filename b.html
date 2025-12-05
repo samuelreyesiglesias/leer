@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Un Abrazo Digital</title>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <title>Tu Universo Cósmico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Paleta de colores tierna y cálida */
-            --bg-warm-light: #fff1e6; /* Crema suave */
-            --bg-warm-peach: #eddcd2;
-            --bg-soft-lavender: #e8dff5;
-            --text-dark-cozy: #4a403a; /* Marrón suave en vez de negro */
-            --accent-rose-gold: #cfaba6;
-            --accent-soft-gold: #e6c229;
+            /* Paleta de colores más rica y profunda para el universo */
+            --space-bg-1: #2E0249; /* Violeta profundo */
+            --space-bg-2: #570A57; /* Magenta oscuro */
+            --space-bg-3: #A91079; /* Rosa intenso */
+            --star-gold: #F7FD04;
+            --heart-pink: #FF6BADB3;
+            --text-cream: #FFF8E7;
+            --glass-border: rgba(255, 248, 231, 0.3);
         }
 
         body, html {
@@ -21,344 +22,419 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            overflow: hidden;
-            background: var(--bg-warm-light);
+            overflow: hidden; /* Crucial para la inmersión */
+            background: #000;
             font-family: 'Lora', serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Evita rebote en iOS */
-            position: fixed; 
+            position: fixed; /* Fija la pantalla en móviles */
+            cursor: crosshair; /* Sugiere interactividad */
         }
 
-        /* --- Fondo Inmersivo Suave --- */
-        .soft-background {
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, var(--bg-warm-light) 20%, var(--bg-warm-peach) 50%, var(--bg-soft-lavender) 80%);
-            filter: blur(60px);
-            opacity: 0.8;
-            animation: gentleFlow 40s infinite alternate ease-in-out;
-            z-index: -2;
-        }
-
-        /* Partículas de luz flotante (Bokeh) */
-        .floating-lights {
+        /* --- Capas del Universo Inmersivo --- */
+        .universe-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; pointer-events: none;
-        }
-        .light-orb {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 0 20px rgba(230, 194, 41, 0.2);
-            animation: floatUpGentle 25s infinite linear;
+            pointer-events: none; /* El click debe traspasar al body */
         }
 
-        /* --- Escenario Principal y Responsivo --- */
+        /* Capa 1: Gradiente base profundo */
+        .bg-deep {
+            background: radial-gradient(ellipse at bottom, var(--space-bg-2) 0%, var(--space-bg-1) 60%, #000 100%);
+            z-index: -5;
+        }
+
+        /* Capa 2: Nebulosa giratoria suave */
+        .bg-nebula {
+            background: radial-gradient(circle at 50% 50%, rgba(169, 16, 121, 0.4), transparent 70%),
+                        radial-gradient(circle at 20% 80%, rgba(87, 10, 87, 0.5), transparent 60%);
+            filter: blur(30px);
+            opacity: 0.7;
+            animation: nebulaRotate 60s infinite linear;
+            z-index: -4;
+        }
+
+        /* Capa 3: Polvo estelar flotante */
+        .star-dust {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px white, 0 0 10px var(--star-gold);
+            opacity: 0;
+            animation: driftStars 20s infinite linear;
+        }
+
+        /* --- El Símbolo Central: Corazón Cósmico --- */
+        .cosmic-heart-core {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 4vh;
+            z-index: 2;
+            animation: cosmicHeartbeat 4s ease-in-out infinite;
+        }
+
+        .heart-shape-glow {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Creación de forma de corazón con CSS */
+            background: radial-gradient(circle at 30% 30%, var(--star-gold), var(--heart-pink));
+            box-shadow: 0 0 50px var(--heart-pink), inset 0 0 20px var(--star-gold);
+            transform: rotate(45deg);
+        }
+        .heart-shape-glow::before, .heart-shape-glow::after {
+            content: ''; position: absolute; width: 100%; height: 100%;
+            background: inherit; border-radius: 50%; box-shadow: inherit;
+        }
+        .heart-shape-glow::before { left: -50%; }
+        .heart-shape-glow::after { top: -50%; }
+
+
+        /* --- Contenedor de Cristal PRO (Legibilidad) --- */
         #stage {
             position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            transition: transform 0.5s ease-out; /* Suavizado para paralaje */
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box; z-index: 10; pointer-events: none; /* Permite clicks a través */
         }
 
-        /* --- El "Alma" (Orbe central que respira) --- */
-        .soul-orb {
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle at 30% 30%, #fff, var(--accent-rose-gold));
-            border-radius: 50%;
-            box-shadow: 0 0 40px rgba(207, 171, 166, 0.4), inset 0 0 20px rgba(255,255,255,0.8);
-            margin-bottom: 3vh;
-            animation: breatheGentle 6s ease-in-out infinite;
-            transform: translateZ(30px); /* Efecto 3D sutil */
-        }
-
-        /* --- Contenedor de Cristal (Glassmorphism Pro) --- */
-        .glass-container {
+        .glass-panel {
+            pointer-events: auto; /* Atrapa clicks dentro del panel */
             position: relative;
-            width: 90%; /* Móvil primero */
-            max-width: 650px; /* Límite para escritorio */
-            min-height: 30vh;
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(20px) saturate(120%);
-            -webkit-backdrop-filter: blur(20px) saturate(120%);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 3rem 2rem;
-            box-shadow: 0 20px 40px rgba(74, 64, 58, 0.1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            box-sizing: border-box;
-            transform: translateZ(50px);
+            /* Ancho responsivo inteligente */
+            width: clamp(300px, 85vw, 700px);
+            min-height: 35vh;
+            /* Glassmorphism más limpio */
+            background: rgba(46, 2, 73, 0.4); /* Base oscura transparente */
+            backdrop-filter: blur(25px) saturate(110%);
+            -webkit-backdrop-filter: blur(25px) saturate(110%);
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.05);
+            padding: clamp(2rem, 5vw, 4rem); /* Padding dinámico */
+            display: flex; justify-content: center; align-items: center;
+            text-align: center; box-sizing: border-box;
         }
 
-        /* --- Tipografía y Animación de Texto --- */
+        /* --- Tipografía y Estados del Texto --- */
         .text-content {
-            font-size: 1.3rem; /* Tamaño base legible */
-            color: var(--text-dark-cozy);
+            /* Tamaño de fuente dinámico usando clamp para legibilidad perfecta */
+            font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+            color: var(--text-cream);
             line-height: 1.8;
             font-weight: 500;
             opacity: 1;
-            /* Transición suave para el cambio de frase */
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
-        /* Clases para estados del texto */
-        .text-hidden {
-            opacity: 0;
-            transform: translateY(15px); /* Flota un poco hacia arriba al desaparecer */
-        }
+        .text-hidden { opacity: 0; transform: translateY(20px) scale(0.95); }
 
         /* Estilos de énfasis */
-        .tender-accent {
+        .highlight-gold {
             font-family: 'Great Vibes', cursive;
-            font-size: 2.2rem;
-            color: var(--accent-rose-gold);
-            display: block;
-            margin-top: 1.5rem;
-            text-shadow: 0 2px 5px rgba(207, 171, 166, 0.2);
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: var(--star-gold);
+            display: block; margin-top: 1.5rem;
+            text-shadow: 0 0 15px rgba(247, 253, 4, 0.5);
         }
 
-        .warm-hug {
+        .highlight-love {
             font-family: 'Great Vibes', cursive;
-            font-size: 2.8rem;
-            background: linear-gradient(45deg, var(--accent-rose-gold), var(--accent-soft-gold));
+            font-size: clamp(2.5rem, 5vw, 3.8rem);
+            background: linear-gradient(to right, var(--star-gold), var(--heart-pink));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            display: block;
-            margin: 2rem 0;
-            padding: 0 10px; /* Evita cortes en itálicas */
+            display: block; margin: 2rem 0; padding: 0 10px;
+            filter: drop-shadow(0 0 10px rgba(255, 107, 173, 0.4));
         }
 
-        .final-z-tender {
+        .final-z-symbol {
             font-family: 'Great Vibes', cursive;
-            font-size: 6rem; /* Grande pero no agresivo */
-            color: var(--accent-rose-gold);
-            opacity: 0;
-            transform: scale(0.9);
-            animation: revealSoft 4s forwards ease-out;
+            font-size: clamp(6rem, 15vw, 10rem);
+            background: linear-gradient(45deg, var(--text-cream), var(--star-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px var(--star-gold));
+            opacity: 0; transform: scale(0.8) rotate(-10deg);
+            animation: revealSymbol 5s forwards ease-out;
         }
 
-        /* Cursor de máquina de escribir */
-        .typing-cursor::after {
-            content: '|';
-            display: inline-block;
-            margin-left: 4px;
-            color: var(--accent-rose-gold);
-            opacity: 0.7;
-            animation: blinkCursor 1s infinite;
+        .typing-cursor::after { content: '|'; margin-left: 4px; color: var(--star-gold); animation: blink 1s infinite; }
+
+        /* --- ELEMENTOS INTERACTIVOS (Bomba de amor al hacer click) --- */
+        #interaction-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 20; overflow: hidden;
         }
 
-        /* --- Pantalla de Inicio (Overlay) --- */
+        .burst-particle {
+            position: absolute;
+            pointer-events: none;
+            /* La animación se define en JS mediante variables CSS */
+            animation: burstAndFall var(--burst-duration) ease-out forwards;
+        }
+
+        /* Tipos de partículas */
+        .particle-heart { font-size: var(--particle-size); color: var(--heart-pink); text-shadow: 0 0 10px var(--heart-pink); }
+        .particle-star { font-size: var(--particle-size); color: var(--star-gold); text-shadow: 0 0 10px var(--star-gold); }
+
+
+        /* --- Pantalla de Inicio --- */
         #start-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-warm-light);
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            cursor: pointer;
-            transition: opacity 0.8s ease;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1a001a; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; transition: opacity 0.8s ease;
         }
         #start-screen h1 {
-            font-family: 'Great Vibes', cursive;
-            font-size: 3rem;
-            color: var(--text-dark-cozy);
-            margin-bottom: 1rem;
+            font-family: 'Great Vibes', cursive; font-size: 3.5rem;
+            color: var(--star-gold); margin-bottom: 1rem;
+            text-shadow: 0 0 20px var(--heart-pink);
         }
         #start-screen p {
-            font-size: 1.1rem;
-            color: var(--accent-rose-gold);
-            letter-spacing: 1px;
-            animation: pulseText 2s infinite;
-        }
-
-        /* --- Media Queries para Responsividad Pro --- */
-        @media (min-width: 768px) {
-            /* Tablet y Escritorio */
-            .text-content { font-size: 1.6rem; }
-            .tender-accent { font-size: 2.8rem; }
-            .warm-hug { font-size: 3.5rem; }
-            .soul-orb { width: 100px; height: 100px; }
-            .glass-container { padding: 4rem 3rem; min-height: 35vh;}
-             .final-z-tender { font-size: 8rem; }
+            font-size: 1.1rem; color: var(--text-cream); letter-spacing: 2px;
+            text-transform: uppercase; animation: pulseText 2s infinite;
         }
 
         /* --- Animaciones CSS --- */
-        @keyframes gentleFlow {
-            0% { transform: translate(-10%, -10%) rotate(0deg); }
-            100% { transform: translate(5%, 5%) rotate(3deg); }
+        @keyframes nebulaRotate { from { transform: rotate(0deg) scale(1); } to { transform: rotate(360deg) scale(1.1); } }
+        @keyframes driftStars { 0% { transform: translateY(100vh) translateX(-50px); opacity: 0; } 50% { opacity: 0.8; } 100% { transform: translateY(-10vh) translateX(50px); opacity: 0; } }
+        @keyframes cosmicHeartbeat { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.15) rotate(2deg); filter: brightness(1.3) drop-shadow(0 0 30px var(--heart-pink)); } }
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes pulseText { 50% { opacity: 0.5; } }
+        @keyframes revealSymbol { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+
+        /* Animación compleja para el click interactivo (Gravedad + Explosión) */
+        @keyframes burstAndFall {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0) rotate(0deg);
+            }
+            20% {
+                 opacity: 1;
+                 /* Explosión inicial hacia afuera */
+                 transform: translate(var(--dest-x), var(--dest-y)) scale(1.2) rotate(var(--rot));
+            }
+            100% {
+                opacity: 0;
+                /* Caída por gravedad y desvanecimiento */
+                transform: translate(var(--dest-x), calc(var(--dest-y) + 150px)) scale(0.5) rotate(calc(var(--rot) + 180deg));
+            }
         }
-        @keyframes floatUpGentle {
-            0% { transform: translateY(100vh) scale(0.8); opacity: 0; }
-            20% { opacity: 0.5; }
-            100% { transform: translateY(-10vh) scale(1.1); opacity: 0; }
-        }
-        @keyframes breatheGentle {
-            0%, 100% { transform: scale(1); opacity: 0.9; box-shadow: 0 0 40px rgba(207, 171, 166, 0.4); }
-            50% { transform: scale(1.08); opacity: 1; box-shadow: 0 0 60px rgba(207, 171, 166, 0.6); }
-        }
-        @keyframes blinkCursor { 0%, 100% { opacity: 0; } 50% { opacity: 0.7; } }
-        @keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-        @keyframes revealSoft { to { opacity: 1; transform: scale(1); } }
 
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1>Un Momento de Ternura</h1>
-        <p>Toca la pantalla para comenzar</p>
+        <h1>Tu Universo Privado</h1>
+        <p>[ Toca para entrar ]</p>
     </div>
 
     <audio id="bg-music" loop preload="auto">
-        <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Touching%20Moments%20One%20-%20Pulse.mp3" type="audio/mpeg">
+        <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Deep%20Space.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="click-sound" preload="auto">
+         <source src="https://freesound.org/data/previews/321/321257_5260872-lq.mp3" type="audio/mpeg">
     </audio>
 
-    <div class="soft-background"></div>
-    <div class="floating-lights" id="lights-container"></div>
+    <div class="universe-layer bg-deep"></div>
+    <div class="universe-layer bg-nebula"></div>
+    <div class="universe-layer" id="star-dust-container"></div>
+    
+    <div id="interaction-layer"></div>
 
     <div id="stage">
-        <div class="soul-orb"></div>
+        <div class="cosmic-heart-core">
+            <div class="heart-shape-glow"></div>
+        </div>
 
-        <div class="glass-container">
+        <div class="glass-panel">
             <div class="text-content typing-cursor" id="dynamic-text"></div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Referencias al DOM
             const startScreen = document.getElementById('start-screen');
             const bgMusic = document.getElementById('bg-music');
+            const clickSoundBase = document.getElementById('click-sound');
             const dynamicText = document.getElementById('dynamic-text');
-            const lightsContainer = document.getElementById('lights-container');
-            const stage = document.getElementById('stage');
+            const starDustContainer = document.getElementById('star-dust-container');
+            const interactionLayer = document.getElementById('interaction-layer');
 
-            // --- Secuencia de Frases (Enfoque en Ternura y Agrado) ---
-            // type: 'normal' | 'accent' | 'hug' (abrazo cálido) | 'final'
+            // Configuración de volumen inicial
+            clickSoundBase.volume = 0.4; 
+
+            // --- Secuencia de Frases (Optimizada para ternura y legibilidad) ---
             const sequence = [
-                { text: "A veces me detengo un momento a pensar...", type: 'normal', pause: 2000 },
-                { text: "En la inmensa suerte que tiene este mundo de tenerte.", type: 'accent', pause: 3000 },
-                { text: "Eres una creación llena de una dulzura infinita.", type: 'normal', pause: 2500 },
-                { text: "Lo más bonito, amable y genuino que existe.", type: 'hug', pause: 3000 },
-                { text: "Tu energía se siente como un abrazo cálido...", type: 'normal', pause: 2000 },
-                { text: "...que calma cualquier realidad.", type: 'accent', pause: 3000 },
-                { text: "Eres, simplemente, un regalo para el alma.", type: 'hug', pause: 3500 },
-                { text: "z", type: 'final', pause: 10000 } // Z minúscula y tierna
+                { text: "En la vastedad del espacio y el tiempo...", type: 'normal', pause: 2500 },
+                { text: "Existe una singularidad perfecta: Tú.", type: 'highlight-gold', pause: 3500 },
+                { text: "Eres la coincidencia más hermosa del universo.", type: 'normal', pause: 3000 },
+                { text: "Una supernova de ternura y luz genuina.", type: 'highlight-love', pause: 4000 },
+                { text: "Tu gravedad atrae todo lo bueno...", type: 'normal', pause: 2500 },
+                { text: "...y hace que este mundo se sienta como un hogar.", type: 'highlight-gold', pause: 3500 },
+                { text: "Eres, y siempre serás, mi milagro favorito.", type: 'highlight-love', pause: 4500 },
+                { text: "z", type: 'final', pause: 15000 } // Símbolo final
             ];
 
-            // --- Función de Máquina de Escribir Pro ---
-            // Velocidad variable para mayor realismo
+            // --- Función de Máquina de Escribir Fluida ---
             async function typeWriter(text, element) {
                 element.innerHTML = '';
                 element.classList.add('typing-cursor');
                 
                 for (let i = 0; i < text.length; i++) {
                     element.innerHTML += text.charAt(i);
-                    // Más lento para frases tiernas
-                    let speed = 70 + (Math.random() * 40 - 20); 
-                    // Pausa extra en puntos y comas
-                    if (['.', ',', '...'].includes(text.charAt(i))) speed += 300; 
+                    // Velocidad variable para mayor naturalidad
+                    let speed = 60 + (Math.random() * 30); 
+                    if (['.', ',', '...'].includes(text.charAt(i))) speed += 400; // Pausas naturales
                     await new Promise(resolve => setTimeout(resolve, speed));
                 }
             }
 
-            // --- Controlador de la Secuencia ---
+            // --- Ejecución de la Secuencia ---
             async function runSequence() {
                 for (let i = 0; i < sequence.length; i++) {
                     const item = sequence[i];
-                    
-                    // 1. Preparar el contenedor y estilos
                     dynamicText.className = 'text-content typing-cursor'; // Reset
 
                     if (item.type === 'final') {
                          dynamicText.classList.remove('typing-cursor');
-                         // Usamos innerHTML para la clase específica de la Z final
-                         dynamicText.innerHTML = `<span class="final-z-tender">${item.text}</span>`;
+                         dynamicText.innerHTML = `<span class="final-z-symbol">${item.text}</span>`;
                     } else {
-                        if(item.type === 'accent') dynamicText.classList.add('tender-accent');
-                        if(item.type === 'hug') dynamicText.classList.add('warm-hug');
-                        
-                        // 2. Escribir el texto
+                        if(item.type !== 'normal') dynamicText.classList.add(item.type);
                         await typeWriter(item.text, dynamicText);
                     }
 
-                    // 3. Pausa para leer y sentir
                     await new Promise(resolve => setTimeout(resolve, item.pause));
 
-                    // 4. Transición de salida suave (si no es el final)
                     if (i < sequence.length - 1) {
                         dynamicText.classList.add('text-hidden');
-                        await new Promise(resolve => setTimeout(resolve, 800)); // Esperar la transición CSS
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Espera transición de salida
                     }
                 }
             }
 
-            // --- Generador de Luces Flotantes (Bokeh) ---
-            function createLights() {
-                for (let i = 0; i < 35; i++) {
-                    const light = document.createElement('div');
-                    light.classList.add('light-orb');
-                    const size = Math.random() * 30 + 5;
-                    light.style.width = `${size}px`;
-                    light.style.height = `${size}px`;
-                    light.style.left = `${Math.random() * 100}%`;
-                    light.style.top = `${Math.random() * 120}%`;
-                    // Animación orgánica y lenta
-                    light.style.animationDuration = `${Math.random() * 30 + 20}s`;
-                    light.style.animationDelay = `-${Math.random() * 30}s`;
-                    light.style.opacity = Math.random() * 0.4 + 0.1;
-                    lightsContainer.appendChild(light);
+            // --- Generador de Polvo Estelar (Fondo) ---
+            function createStarDust() {
+                const count = window.innerWidth < 768 ? 40 : 80; // Menos partículas en móvil
+                for (let i = 0; i < count; i++) {
+                    const star = document.createElement('div');
+                    star.classList.add('star-dust');
+                    const size = Math.random() * 3 + 1;
+                    star.style.width = `${size}px`; star.style.height = `${size}px`;
+                    star.style.left = `${Math.random() * 100}%`;
+                    star.style.top = `${Math.random() * 100}%`;
+                    star.style.animationDelay = `-${Math.random() * 20}s`;
+                    star.style.animationDuration = `${Math.random() * 15 + 15}s`;
+                    starDustContainer.appendChild(star);
                 }
             }
 
-            // --- Efecto Paralaje Sutil (Solo en escritorio) ---
-            // Detectamos si es dispositivo táctil para no activar el paralaje
-            const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-            if (!isTouchDevice) {
-                document.addEventListener('mousemove', (e) => {
-                    const moveX = (window.innerWidth / 2 - e.pageX) / 50;
-                    const moveY = (window.innerHeight / 2 - e.pageY) / 50;
-                    stage.style.transform = `translate(${moveX}px, ${moveY}px)`;
-                });
+            // --- SISTEMA DE INTERACTIVIDAD (CLICK/TOUCH) ---
+            
+            // Función para reproducir el sonido de click sin solapamiento
+            function playClickSound() {
+                // Clonamos el nodo de audio para poder reproducirlo múltiples veces simultáneamente
+                const soundClone = clickSoundBase.cloneNode();
+                soundClone.volume = 0.3; // Volumen suave
+                soundClone.play().catch(() => {}); // Ignorar errores si se spamea mucho
             }
 
+            // Función principal que genera la explosión
+            function createInteractionBurst(x, y) {
+                playClickSound(); // Sonido multisensorial
+
+                const particleCount = 12; // Cantidad de elementos por click
+                const symbols = ['❤', '✨', '⭐', '💖'];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('burst-particle');
+                    
+                    // Elegir símbolo aleatorio y asignar clase
+                    const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                    particle.textContent = symbol;
+                    particle.classList.add(symbol.includes('❤') || symbol.includes('💖') ? 'particle-heart' : 'particle-star');
+                    
+                    // Posicionar en el lugar del click
+                    particle.style.left = `${x}px`;
+                    particle.style.top = `${y}px`;
+
+                    // Cálculos para la animación de explosión (Variables CSS)
+                    const destX = (Math.random() - 0.5) * 250; // Dispersión horizontal
+                    const destY = (Math.random() - 0.5) * 250 - 50; // Dispersión vertical (tendencia hacia arriba inicial)
+                    const rot = (Math.random() - 0.5) * 360; // Rotación aleatoria
+                    const size = Math.random() * 1.5 + 0.8; // Tamaño variable
+                    const duration = Math.random() * 1 + 1.5; // Duración entre 1.5s y 2.5s
+
+                    // Asignar variables CSS al elemento
+                    particle.style.setProperty('--dest-x', `${destX}px`);
+                    particle.style.setProperty('--dest-y', `${destY}px`);
+                    particle.style.setProperty('--rot', `${rot}deg`);
+                    particle.style.setProperty('--particle-size', `${size}rem`);
+                    particle.style.setProperty('--burst-duration', `${duration}s`);
+
+                    interactionLayer.appendChild(particle);
+
+                    // Limpieza: Eliminar el elemento del DOM al finalizar la animación
+                    setTimeout(() => {
+                        particle.remove();
+                    }, duration * 1000);
+                }
+            }
+
+            // Event Listener global para clicks y toques
+            ['click', 'touchstart'].forEach(eventType => {
+                document.addEventListener(eventType, (e) => {
+                    // Obtener coordenadas (compatible con touch y mouse)
+                    let x = e.clientX;
+                    let y = e.clientY;
+                    if (eventType === 'touchstart') {
+                        x = e.touches[0].clientX;
+                        y = e.touches[0].clientY;
+                        // Evitar que el touchstart dispare también un click en algunos móviles
+                        if (e.target !== startScreen && !startScreen.contains(e.target)) {
+                            // e.preventDefault(); 
+                        }
+                    }
+
+                    // No generar efecto si se clickea en la pantalla de inicio antes de que desaparezca
+                    if (startScreen.style.opacity !== '0') return;
+
+                    createInteractionBurst(x, y);
+                }, { passive: false });
+            });
+
+
             // --- INICIO DE LA EXPERIENCIA ---
-            startScreen.addEventListener('click', () => {
+            startScreen.addEventListener('click', handleStart);
+            startScreen.addEventListener('touchstart', handleStart, { passive: false });
+
+            function handleStart(e) {
+                if(e.type === 'touchstart') e.preventDefault(); // Asegurar inicio en móvil
+                
+                startScreen.style.pointerEvents = 'none'; // Evitar doble click
                 startScreen.style.opacity = 0;
                 setTimeout(() => startScreen.style.display = 'none', 800);
 
-                // Audio fade-in suave
+                // Fade-in de la música ambiental
                 bgMusic.volume = 0;
                 bgMusic.play().then(() => {
                     let vol = 0;
                     const interval = setInterval(() => {
-                        if (vol < 0.4) { vol += 0.02; bgMusic.volume = vol; } 
+                        if (vol < 0.6) { vol += 0.05; bgMusic.volume = vol; } 
                         else { clearInterval(interval); }
                     }, 200);
-                }).catch(e => console.log("Audio bloqueado:", e));
+                }).catch(e => console.log("Audio requiere interacción:", e));
 
-                createLights();
-                // Pequeña pausa antes de que aparezca la primera frase
-                setTimeout(runSequence, 1200);
-            });
-
+                createStarDust();
+                setTimeout(runSequence, 1500);
+            }
         });
     </script>
 </body>
