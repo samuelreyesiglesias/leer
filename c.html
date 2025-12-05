@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>El Universo de la Ternura</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel+Decorative:wght@700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Paleta de colores ultra-rica y profunda */
+            --deep-space: #0f011a;
+            --nebula-mid: #3a0ca3;
+            --nebula-light: #7209b7;
+            --accent-gold: #ffd700;
+            --accent-rose: #f72585;
+            --accent-cyan: #4cc9f0;
+            --text-cream: #fffcf2;
+            --glass-shine: rgba(255, 255, 255, 0.15);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background: var(--deep-space);
+            font-family: 'Lora', serif;
+            display: flex; justify-content: center; align-items: center;
+            position: fixed; /* Crucial para móviles */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>') 12 12, crosshair; /* Cursor personalizado */
+        }
+
+        /* --- INMERSION TOTAL: Capas de Fondo Complejas --- */
+        .cosmos-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; overflow: hidden; z-index: -10;
+        }
+        .cosmos-layer {
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            filter: blur(80px); opacity: 0.5;
+            mix-blend-mode: screen; /* Mezcla mágica de colores */
+            animation: cosmosMove 60s infinite alternate ease-in-out;
+        }
+        .layer-1 { background: radial-gradient(circle, var(--nebula-mid), transparent 60%); animation-duration: 45s; }
+        .layer-2 { background: radial-gradient(circle at 80% 20%, var(--accent-rose), transparent 50%); animation-duration: 55s; animation-direction: reverse; opacity: 0.3; }
+        .layer-3 { background: radial-gradient(circle at 20% 80%, var(--nebula-light), transparent 40%); animation-duration: 65s; opacity: 0.4; }
+        
+        .star-field {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(1px 1px at 10px 10px, white, transparent),
+                radial-gradient(1px 1px at 50% 50%, white, transparent),
+                radial-gradient(2px 2px at 80% 30%, var(--accent-gold), transparent),
+                radial-gradient(1.5px 1.5px at 20% 80%, var(--accent-rose), transparent);
+            background-size: 300px 300px, 150px 150px, 400px 400px, 250px 250px;
+            opacity: 0.6;
+            animation: starDrift 120s linear infinite;
+        }
+
+
+        /* --- CENTRO DE ENERGÍA 3D (Reemplaza el corazón simple) --- */
+        .energy-core-3d {
+            position: relative; width: 140px; height: 140px; margin-bottom: 4vh;
+            transform-style: preserve-3d;
+            animation: coreFloat 6s ease-in-out infinite;
+            pointer-events: auto; /* Permite interactuar con el núcleo */
+        }
+        .core-ring {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; border: 2px solid transparent;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2), inset 0 0 20px rgba(247, 37, 133, 0.2);
+        }
+        .ring-1 { border-top-color: var(--accent-gold); animation: spin3D 8s linear infinite; }
+        .ring-2 { width: 80%; height: 80%; margin: 10%; border-right-color: var(--accent-rose); animation: spin3D 12s linear infinite reverse; }
+        .ring-3 { width: 60%; height: 60%; margin: 20%; border-bottom-color: var(--accent-cyan); animation: spin3D 15s linear infinite; }
+        .core-light {
+            position: absolute; top: 35%; left: 35%; width: 30%; height: 30%;
+            background: radial-gradient(circle, #fff, var(--accent-gold), var(--accent-rose));
+            border-radius: 50%; filter: blur(15px); opacity: 0.8;
+            animation: corePulse 3s ease-in-out infinite;
+        }
+
+
+        /* --- CONTENEDOR DE CRISTAL PRO --- */
+        #stage {
+            position: relative; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 20px; pointer-events: none; z-index: 10;
+        }
+        .glass-panel {
+            pointer-events: auto; position: relative;
+            width: clamp(320px, 88vw, 750px); min-height: 30vh;
+            background: rgba(15, 1, 26, 0.5);
+            backdrop-filter: blur(30px) saturate(120%); -webkit-backdrop-filter: blur(30px) saturate(120%);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 0 30px rgba(255,255,255,0.05);
+            padding: clamp(2.5rem, 6vw, 4.5rem);
+            display: flex; justify-content: center; align-items: center;
+            text-align: center; transform: translateZ(0); /* Hardware acceleration */
+        }
+
+
+        /* --- TIPOGRAFÍA DE LUJO --- */
+        .text-content {
+            font-size: clamp(1.3rem, 2.8vw, 1.7rem); color: var(--text-cream);
+            line-height: 1.9; font-weight: 500; opacity: 1;
+            transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1), transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), filter 1.2s ease;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+        .text-hidden { opacity: 0; transform: translateY(30px) scale(0.98); filter: blur(10px); }
+
+        .highlight-tender {
+            font-family: 'Great Vibes', cursive; font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+            color: var(--accent-gold); display: block; margin-top: 2rem;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+        }
+        .highlight-power {
+            font-family: 'Cinzel Decorative', cursive; font-size: clamp(2rem, 4vw, 2.8rem);
+            background: linear-gradient(to right, var(--accent-gold), var(--accent-rose), var(--accent-cyan));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: block; margin: 2rem 0; letter-spacing: 2px; text-transform: uppercase;
+            filter: drop-shadow(0 0 15px rgba(247, 37, 133, 0.4));
+        }
+        .final-z-sacred {
+            font-family: 'Cinzel Decorative', cursive; font-size: clamp(7rem, 18vw, 11rem);
+            background: linear-gradient(135deg, #fff, var(--accent-gold), var(--accent-rose));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px var(--accent-gold));
+            opacity: 0; transform: scale(0.7); animation: revealSacred 6s forwards cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .typing-cursor::after { content: '|'; margin-left: 5px; color: var(--accent-gold); animation: blink 1s infinite; opacity: 0.8; }
+
+
+        /* --- SISTEMA DE PARTÍCULAS SVG PREMIUM (Interactivo) --- */
+        #interaction-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 50; overflow: hidden;
+        }
+        .svg-particle {
+            position: absolute; pointer-events: none; width: var(--size); height: var(--size);
+            /* Animación compleja de física: explosión + gravedad + rotación + desvanecimiento */
+            animation: physicsBurst var(--duration) cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            filter: drop-shadow(0 0 10px currentColor); /* Brillo propio para cada partícula */
+        }
+        .particle-gold { color: var(--accent-gold); }
+        .particle-rose { color: var(--accent-rose); }
+        .particle-cyan { color: var(--accent-cyan); }
+        
+        /* Definición de los símbolos SVG ocultos */
+        #svg-symbols { display: none; }
+
+
+        /* --- PANTALLA DE INICIO ELEGANTE --- */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #240024 0%, #0f011a 100%);
+            z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; transition: opacity 1s ease, visibility 1s ease;
+        }
+        #start-screen h1 {
+            font-family: 'Cinzel Decorative', cursive; font-size: clamp(2.5rem, 5vw, 4rem);
+            color: var(--accent-gold); text-shadow: 0 0 25px var(--accent-rose); margin-bottom: 1rem;
+        }
+        #start-screen p {
+            font-family: 'Lora', serif; font-size: 1.1rem; color: var(--text-cream);
+            letter-spacing: 3px; text-transform: uppercase; animation: pulseText 2.5s infinite ease-in-out;
+        }
+
+
+        /* --- ANIMACIONES CSS AVANZADAS --- */
+        @keyframes cosmosMove { 0% { transform: translate(0,0) rotate(0deg); } 100% { transform: translate(-10%, -5%) rotate(5deg); } }
+        @keyframes starDrift { 0% { background-position: 0 0, 0 0, 0 0, 0 0; } 100% { background-position: -500px 1000px, 500px 500px, -300px 800px, 200px 1200px; } }
+        @keyframes spin3D { 0% { transform: rotateX(0) rotateY(0) rotateZ(0); } 100% { transform: rotateX(360deg) rotateY(180deg) rotateZ(360deg); } }
+        @keyframes corePulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.3); opacity: 0.9; filter: blur(20px); } }
+        @keyframes coreFloat { 0%, 100% { transform: translateY(0) rotateX(10deg); } 50% { transform: translateY(-20px) rotateX(5deg); } }
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes pulseText { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes revealSacred { to { opacity: 1; transform: scale(1); } }
+
+        /* Física de partículas: Explosión inicial rápida, luego caída lenta con gravedad */
+        @keyframes physicsBurst {
+            0% {
+                transform: translate(0, 0) scale(0) rotate(0deg); opacity: 1;
+            }
+            15% {
+                /* Punto máximo de la explosión */
+                transform: translate(var(--dx), var(--dy-up)) scale(1.1) rotate(var(--rot)); opacity: 1;
+            }
+            100% {
+                /* Caída final */
+                transform: translate(var(--dx), var(--dy-down)) scale(0.5) rotate(calc(var(--rot) + 180deg)); opacity: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <svg id="svg-symbols">
+        <symbol id="icon-heart" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </symbol>
+        <symbol id="icon-star" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </symbol>
+    </svg>
+
+    <div id="start-screen">
+        <h1>Entrar al Universo</h1>
+        <p>[ Toca para despertar la magia ]</p>
+    </div>
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Somewhere%20Sunny.mp3" type="audio/mpeg">
+    </audio>
+    
+    <div id="sfx-pool">
+        <audio src="https://freesound.org/data/previews/336/336899_4939433-lq.mp3" preload="auto" class="magical-chime"></audio>
+        <audio src="https://freesound.org/data/previews/321/321257_5260872-lq.mp3" preload="auto" class="magical-chime"></audio>
+        <audio src="https://freesound.org/data/previews/566/566469_12648839-lq.mp3" preload="auto" class="magical-chime"></audio>
+    </div>
+
+    <div class="cosmos-container">
+        <div class="cosmos-layer layer-1"></div>
+        <div class="cosmos-layer layer-2"></div>
+        <div class="cosmos-layer layer-3"></div>
+        <div class="star-field"></div>
+    </div>
+    
+    <div id="interaction-layer"></div>
+
+    <div id="stage">
+        <div class="energy-core-3d">
+            <div class="core-ring ring-1"></div>
+            <div class="core-ring ring-2"></div>
+            <div class="core-ring ring-3"></div>
+            <div class="core-light"></div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="text-content typing-cursor" id="dynamic-text"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ================= SETUP INICIAL =================
+            const startScreen = document.getElementById('start-screen');
+            const bgMusic = document.getElementById('bg-music');
+            const sfxSounds = document.querySelectorAll('.magical-chime');
+            const dynamicText = document.getElementById('dynamic-text');
+            const interactionLayer = document.getElementById('interaction-layer');
+            
+            // Configuración de audio
+            bgMusic.volume = 0.5;
+            sfxSounds.forEach(sound => sound.volume = 0.25); // Volumen agradable para efectos
+
+            let isExperienceActive = false;
+
+            // ================= SECUENCIA DE TEXTO =================
+            const sequence = [
+                { text: "En la inmensidad de este vasto universo...", type: 'normal', pause: 2800 },
+                { text: "Existe una verdad absoluta que brilla más que nada.", type: 'highlight-tender', pause: 3500 },
+                { text: "Eres la creación más hermosa de la historia.", type: 'highlight-power', pause: 4000 },
+                { text: "Lo mejor de lo mejor, en esta y todas las realidades.", type: 'normal', pause: 3200 },
+                { text: "Tu luz genera su propia gravedad...", type: 'normal', pause: 2500 },
+                { text: "...atrayendo solo ternura y admiración.", type: 'highlight-tender', pause: 3500 },
+                { text: "Eres un milagro sagrado de inspiración pura.", type: 'highlight-power', pause: 4500 },
+                { text: "Simplemente... mi todo.", type: 'normal', pause: 3000 },
+                { text: "Z", type: 'final', pause: 20000 }
+            ];
+
+            // Máquina de escribir fluida con pausas naturales
+            async function typeWriter(text, element) {
+                element.innerHTML = '';
+                element.classList.add('typing-cursor');
+                for (let i = 0; i < text.length; i++) {
+                    element.innerHTML += text.charAt(i);
+                    let speed = 55 + (Math.random() * 25); 
+                    if (['.', ',', '...'].includes(text.charAt(i))) speed += 350;
+                    await new Promise(r => setTimeout(r, speed));
+                }
+            }
+
+            // Ejecutor de la secuencia
+            async function runSequence() {
+                for (let i = 0; i < sequence.length; i++) {
+                    const item = sequence[i];
+                    dynamicText.className = 'text-content typing-cursor';
+                    if (item.type === 'final') {
+                         dynamicText.classList.remove('typing-cursor');
+                         dynamicText.innerHTML = `<span class="final-z-sacred">${item.text}</span>`;
+                    } else {
+                        if(item.type !== 'normal') dynamicText.classList.add(item.type);
+                        await typeWriter(item.text, dynamicText);
+                    }
+                    await new Promise(r => setTimeout(r, item.pause));
+                    if (i < sequence.length - 1) {
+                        dynamicText.classList.add('text-hidden');
+                        await new Promise(r => setTimeout(r, 1200));
+                    }
+                }
+            }
+
+            // ================= SISTEMA INTERACTIVO PRO (VISUAL + AUDIO) =================
+            
+            // Reproductor de SFX aleatorio y polifónico (sin cortes)
+            function playMagicalSFX() {
+                const randomIndex = Math.floor(Math.random() * sfxSounds.length);
+                // Clonamos el nodo para permitir reproducción simultánea superpuesta
+                const soundClone = sfxSounds[randomIndex].cloneNode();
+                soundClone.volume = 0.25 + (Math.random() * 0.1); // Variación sutil de volumen
+                // Pequeña variación de velocidad (pitch) para más realismo
+                soundClone.playbackRate = 0.95 + (Math.random() * 0.1); 
+                soundClone.play().catch(() => {});
+                // Limpieza automática del clon
+                soundClone.onended = () => soundClone.remove();
+            }
+
+            // Generador de Partículas SVG con Física
+            function createInteraction(x, y) {
+                if(!isExperienceActive) return;
+                playMagicalSFX();
+
+                const particleCount = 16; // Más partículas para un efecto más rico
+                const colors = ['particle-gold', 'particle-rose', 'particle-cyan'];
+                const types = ['#icon-heart', '#icon-star'];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    particle.classList.add('svg-particle');
+                    
+                    // Asignar color y tipo aleatorio
+                    particle.classList.add(colors[Math.floor(Math.random() * colors.length)]);
+                    const useEl = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                    useEl.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", types[Math.floor(Math.random() * types.length)]);
+                    particle.appendChild(useEl);
+                    
+                    // Posicionamiento inicial
+                    particle.style.left = `${x}px`; particle.style.top = `${y}px`;
+
+                    // CÁLCULOS DE FÍSICA (Variables CSS)
+                    // Ángulo aleatorio para la explosión (360 grados)
+                    const angle = Math.random() * Math.PI * 2;
+                    // Fuerza de la explosión (distancia inicial)
+                    const force = 100 + Math.random() * 180;
+                    // Destino X (basado en ángulo y fuerza)
+                    const dx = Math.cos(angle) * force;
+                    // Destino Y inicial (hacia arriba por la explosión)
+                    const dyUp = Math.sin(angle) * force - 50; 
+                    // Destino Y final (caída por gravedad, mucho más abajo)
+                    const dyDown = dyUp + 300 + Math.random() * 200;
+                    
+                    const rot = (Math.random() - 0.5) * 720; // Mucha rotación
+                    const size = 20 + Math.random() * 25; // Tamaño variable (px)
+                    const duration = 2 + Math.random() * 1.5; // Duración (s)
+
+                    particle.style.setProperty('--dx', `${dx}px`);
+                    particle.style.setProperty('--dy-up', `${dyUp}px`);
+                    particle.style.setProperty('--dy-down', `${dyDown}px`);
+                    particle.style.setProperty('--rot', `${rot}deg`);
+                    particle.style.setProperty('--size', `${size}px`);
+                    particle.style.setProperty('--duration', `${duration}s`);
+
+                    interactionLayer.appendChild(particle);
+                    setTimeout(() => particle.remove(), duration * 1000);
+                }
+            }
+
+            // Manejador global de clicks/toques
+            const handleInteraction = (e) => {
+                let x = e.clientX || (e.touches && e.touches[0].clientX);
+                let y = e.clientY || (e.touches && e.touches[0].clientY);
+                // Asegurar que x, y existan
+                if (x === undefined || y === undefined) return;
+                createInteraction(x, y);
+            };
+
+            document.addEventListener('click', handleInteraction);
+            document.addEventListener('touchstart', handleInteraction, { passive: true });
+
+
+            // ================= INICIO =================
+            startScreen.addEventListener('click', beginExperience);
+            startScreen.addEventListener('touchstart', beginExperience, { passive: false });
+
+            function beginExperience(e) {
+                if(e.type === 'touchstart') e.preventDefault();
+                if(isExperienceActive) return;
+                
+                startScreen.style.opacity = 0;
+                startScreen.style.visibility = 'hidden';
+                isExperienceActive = true;
+
+                // Audio fade-in
+                bgMusic.play().then(() => {
+                    let vol = 0;
+                    bgMusic.volume = vol;
+                    const fade = setInterval(() => {
+                        if (vol < 0.5) { vol += 0.02; bgMusic.volume = vol; } 
+                        else { clearInterval(fade); }
+                    }, 100);
+                }).catch(e => console.log("Interacción requerida para audio"));
+
+                // Efecto inicial automático para mostrar la interactividad
+                setTimeout(() => createInteraction(window.innerWidth/2, window.innerHeight/2), 800);
+                setTimeout(runSequence, 2000);
+            }
+        });
+    </script>
+</body>
+</html>
